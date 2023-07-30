@@ -1,0 +1,35 @@
+dev_container/
+*.json
+
+dist
+
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+
+# Folders
+_obj
+_test
+vendor/
+
+# Go binary
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go testing/coverage reports
+*.test
+*.out
+
+# Ignore Go module cache
+/go.sum
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Visual Studio Code specific files
+.vscode/
