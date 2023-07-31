@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"jf_requests/jf_requests"
@@ -19,6 +20,7 @@ type Arguments struct {
 	Password string
 	SeriesId string
 	SeasonId string
+	Name     string
 }
 
 // Parses the command line arguments and returns a struct containing all found arguments.
@@ -30,6 +32,7 @@ func ParseCLIArgs() *Arguments {
 	flag.StringVar(&args.SeasonId, "seasonid", "", "If given, only the episodes with the provided season Id will be downloaded")
 	flag.StringVar(&args.Username, "username", "", "Username used to login to the Jellyfin instance. If not provided, password will be prompted.")
 	flag.StringVar(&args.Password, "password", "", "Passwort for the Jellyfin instance. If not provided, username will be prompted.")
+	flag.StringVar(&args.Name, "name", "", "Name of the Show or Movie you want to download.")
 
 	flag.Parse()
 
@@ -42,8 +45,8 @@ func CheckArguments(args *Arguments) (bool, string) {
 		return false, "No URL was given. See -h for more information"
 	}
 
-	if args.SeriesId == "" {
-		return false, "No SeriesID was given. See -h for more information."
+	if args.SeriesId == "" && args.Name == "" {
+		return false, "No SeriesID or Name was given. See -h for more information."
 	}
 
 	return true, ""
@@ -89,8 +92,24 @@ func PrintSummarry(episodes []jf_requests.Episode) bool {
 	return response == "y"
 }
 
-func GetEpisodesToDownload(creds *jf_requests.AuthResponse, args *Arguments) ([]jf_requests.Episode, error) {
-	episodes, err := jf_requests.GetEpisodesFromId(creds.Token, args.BaseUrl, args.SeriesId)
+func GetEpisodesToDownload(auth *jf_requests.AuthResponse, args *Arguments) ([]jf_requests.Episode, error) {
+
+	seriesId := args.SeriesId
+	if args.Name != "" {
+		all, err := jf_requests.GetItemsForText(auth, args.BaseUrl, args.Name)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Could not get Items: %s", err))
+		}
+
+		// todo: Implement selection
+		if len(all) == 0 {
+			return nil, errors.New("Nothing found for given searchtext")
+		}
+
+		seriesId = all[0].Id
+	}
+
+	episodes, err := jf_requests.GetEpisodesFromId(auth.Token, args.BaseUrl, seriesId)
 	if err != nil {
 		return nil, err
 	}
