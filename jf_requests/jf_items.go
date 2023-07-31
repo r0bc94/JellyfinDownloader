@@ -38,7 +38,7 @@ func GetRootItems(auth *AuthResponse, baseurl string) ([]Item, error) {
 }
 
 func GetItemsForParentId(auth *AuthResponse, baseurl string, parentId string) ([]Item, error) {
-	requestUrl := baseurl + fmt.Sprintf("/Users/%s/Items?isSeries=true&isMovie=true&ParentId=%s", auth.UserId, parentId)
+	requestUrl := baseurl + fmt.Sprintf("/Users/%s/Items?IncludeItemTypes=Series&ParentId=%s", auth.UserId, parentId)
 
 	res, err := MakeRequest(auth.Token, requestUrl, "GET", nil)
 	if err != nil {
