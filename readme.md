@@ -2,6 +2,8 @@
 
 This is a simple tool written in Go to download a Series or a single season from a given jellyfin instance. 
 
+_Note: Currently, it works only for Series / TV Shows. I'll also make it work for movies in the future._
+
 ## Disclaimer
 
 Since I've written this in order to learn go, not everything might be very written _as it should_. Also keep in mind
@@ -67,8 +69,9 @@ Usage of ./jellyfindownloader:
 
 ## Todo
 
-- [ ] Instead of fiddling with Ids, one should only provide the series name and episode number which should be downloaded
+- [x] Instead of fiddling with Ids, one should only provide the series name and episode number which should be downloaded
 - [ ] Retrieve the credentials via an environnement variable
+- [ ] Be able to search and download any media types, starting with movies
 - There are probably some other things which should be done whose will come to my mind later on
 
 
