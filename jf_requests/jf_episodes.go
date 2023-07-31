@@ -1,6 +1,10 @@
 package jf_requests
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/fatih/color"
+)
 
 type Episode struct {
 	SeriesName   string
@@ -22,17 +26,27 @@ func GetEpisodesFromId(token string, baseurl string, seriesId string) ([]Episode
 
 	items := res["Items"].([]any)
 	var result []Episode
-	for idx, item := range items {
-		result = append(result, Episode{
+
+	for _, item := range items {
+
+		// Check if media container arg is passed. If not, print a warning that this media
+		// might be missing or corrupted.
+		if item.(map[string]any)["Container"] == nil {
+			color.Yellow("Could not get container format for episode \"%s\"; Might be missing or corrupted!", item.(map[string]any)["Name"].(string))
+			continue
+		}
+
+		ep := Episode{
 			SeriesName:   item.(map[string]any)["SeriesName"].(string),
 			Name:         item.(map[string]any)["Name"].(string),
 			Id:           item.(map[string]any)["Id"].(string),
 			SeasonId:     item.(map[string]any)["SeasonId"].(string),
 			SeasonName:   item.(map[string]any)["SeasonName"].(string),
 			Container:    item.(map[string]any)["Container"].(string),
-			DownloadLink: ""})
+			DownloadLink: ""}
 
-		result[idx].PatchDownloadLink(baseurl, token)
+		ep.PatchDownloadLink(baseurl, token)
+		result = append(result, ep)
 	}
 
 	return result, nil
