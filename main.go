@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"jf_requests/jf_requests"
 	"os"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -92,6 +93,29 @@ func PrintSummarry(episodes []jf_requests.Episode) bool {
 	return response == "y"
 }
 
+func PrintItemSelection(itemsToSelect []jf_requests.Item) (*jf_requests.Item, error) {
+	fmt.Println("Found multiple Shows for the given Searchterm. Please Select the show you want to download:")
+
+	for idx, show := range itemsToSelect {
+		color.Cyan("  %d. %s", idx+1, show.Name)
+	}
+
+	fmt.Print("==> ")
+	reader := bufio.NewReader(os.Stdin)
+	response, _ := reader.ReadString('\n')
+	response = strings.Split(response, "\n")[0]
+	if selection, err := strconv.Atoi(response); err == nil {
+		if selection < 0 || selection > len(itemsToSelect) {
+			return nil, errors.New("Invalid Selection")
+		}
+
+		return &itemsToSelect[selection-1], nil
+	} else {
+		fmt.Println(err)
+		return nil, errors.New("Only provide a single number")
+	}
+}
+
 func GetEpisodesToDownload(auth *jf_requests.AuthResponse, args *Arguments) ([]jf_requests.Episode, error) {
 
 	seriesId := args.SeriesId
@@ -101,12 +125,19 @@ func GetEpisodesToDownload(auth *jf_requests.AuthResponse, args *Arguments) ([]j
 			return nil, errors.New(fmt.Sprintf("Could not get Items: %s", err))
 		}
 
-		// todo: Implement selection
 		if len(all) == 0 {
 			return nil, errors.New("Nothing found for given searchtext")
+		} else if len(all) == 1 {
+			seriesId = all[0].Id
+		} else {
+			series, err := PrintItemSelection(all)
+			if err != nil {
+				return nil, err
+			}
+
+			seriesId = series.Id
 		}
 
-		seriesId = all[0].Id
 	}
 
 	episodes, err := jf_requests.GetEpisodesFromId(auth.Token, args.BaseUrl, seriesId)
