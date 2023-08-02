@@ -73,7 +73,6 @@ func GetAllItems(auth *AuthResponse, baseurl string) ([]Item, error) {
 // Returns the item whose name includes the given search term.
 func GetItemsForText(auth *AuthResponse, baseUrl string, searchtext string) ([]Item, error) {
 	all, err := GetAllItems(auth, baseUrl)
-	fmt.Println(all)
 	if err != nil {
 		return nil, err
 	}
