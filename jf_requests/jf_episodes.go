@@ -45,7 +45,7 @@ func GetEpisodesFromId(token string, baseurl string, seriesId string) ([]Episode
 			Container:    item.(map[string]any)["Container"].(string),
 			DownloadLink: ""}
 
-		ep.PatchDownloadLink(baseurl, token)
+		ep.DownloadLink = GetDownloadLinkForId(baseurl, token, ep.Id)
 		result = append(result, ep)
 	}
 
@@ -62,8 +62,4 @@ func FilterEpisodesForSeason(episodes []Episode, seasonId string) []Episode {
 	}
 
 	return episodesForSeason
-}
-
-func (ep *Episode) PatchDownloadLink(baseUrl string, token string) {
-	ep.DownloadLink = fmt.Sprintf(baseUrl+"/Items/%s/Download?api_key=%s", ep.Id, token)
 }
