@@ -1,30 +1,32 @@
 package jf_requests
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
 
 type Item struct {
-	Name           string
-	Id             string
-	CollectionType string
+	Name string
+	Id   string
+	Type string
 }
 
 func GetItem(rawItems []any, parentItem *Item) []Item {
 	var result []Item
 	for _, item := range rawItems {
 		itm := Item{
-			Name:           item.(map[string]any)["Name"].(string),
-			Id:             item.(map[string]any)["Id"].(string),
-			CollectionType: "",
+			Name: item.(map[string]any)["Name"].(string),
+			Id:   item.(map[string]any)["Id"].(string),
+			Type: item.(map[string]any)["Id"].(string),
 		}
 
-		if parentItem != nil {
-			itm.CollectionType = parentItem.CollectionType
+		if itmtype, ok := item.(map[string]any)["Type"].(string); ok {
+			itm.Type = itmtype
+		} else if parentItem != nil {
+			itm.Type = parentItem.Type
 		} else {
-			collectionType := item.(map[string]any)["CollectionType"].(string)
-			itm.CollectionType = collectionType
+			itm.Type = ""
 		}
 
 		result = append(result, itm)
@@ -47,7 +49,7 @@ func GetRootItems(auth *AuthResponse, baseurl string) ([]Item, error) {
 }
 
 func GetItemsForParentId(auth *AuthResponse, baseurl string, parentItem *Item) ([]Item, error) {
-	requestUrl := baseurl + fmt.Sprintf("/Users/%s/Items?IncludeItemTypes=tvshows&ParentId=%s", auth.UserId, parentItem.Id)
+	requestUrl := baseurl + fmt.Sprintf("/Users/%s/Items?ParentId=%s", auth.UserId, parentItem.Id)
 
 	res, err := MakeRequest(auth.Token, requestUrl, "GET", nil)
 	if err != nil {
@@ -94,4 +96,16 @@ func GetItemsForText(auth *AuthResponse, baseUrl string, searchtext string) ([]I
 	}
 
 	return results, nil
+}
+
+func GetItemForId(auth *AuthResponse, baseurl string, id string) (*Item, error) {
+	requestUrl := baseurl + fmt.Sprintf("/Users/%s/Items/%s", auth.UserId, id)
+	res, err := MakeRequest(auth.Token, requestUrl, "GET", nil)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Failed to find item with id: %s - %s", id, err))
+	}
+
+	resList := make([]any, 1, 1)
+	resList[0] = res
+	return &GetItem(resList, nil)[0], nil
 }

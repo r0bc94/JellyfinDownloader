@@ -77,7 +77,23 @@ func GetPassword(args *Arguments) string {
 	return string(bytePassword)
 }
 
-func PrintSummarry(episodes []jf_requests.Episode) bool {
+func GetConfirmation() bool {
+	fmt.Print("Continue? y/n: ")
+	reader := bufio.NewReader(os.Stdin)
+	response, _ := reader.ReadString('\n')
+	response = strings.ToLower(strings.TrimSpace(response))
+
+	return response == "y"
+}
+
+func PrintMovieSummary(movie *jf_requests.Movie) bool {
+	fmt.Println("The following Movie will be downloaded:")
+	color.Green("Name: %s", movie.Name)
+
+	return GetConfirmation()
+}
+
+func PrintSeriesSummary(episodes []jf_requests.Episode) bool {
 	fmt.Println("The following Episodes will be downloaded:")
 	color.Green("Series: %s", episodes[0].SeriesName)
 	color.Green("Episodes:")
@@ -85,12 +101,7 @@ func PrintSummarry(episodes []jf_requests.Episode) bool {
 		color.Cyan("  %d. %s", idx, episode.Name)
 	}
 
-	fmt.Print("Continue? y/n: ")
-	reader := bufio.NewReader(os.Stdin)
-	response, _ := reader.ReadString('\n')
-	response = strings.ToLower(strings.TrimSpace(response))
-
-	return response == "y"
+	return GetConfirmation()
 }
 
 func PrintItemSelection(itemsToSelect []jf_requests.Item) (*jf_requests.Item, error) {
@@ -117,7 +128,6 @@ func PrintItemSelection(itemsToSelect []jf_requests.Item) (*jf_requests.Item, er
 }
 
 func GetEpisodesToDownload(auth *jf_requests.AuthResponse, args *Arguments) ([]jf_requests.Episode, error) {
-
 	seriesId := args.SeriesId
 	if args.Name != "" {
 		all, err := jf_requests.GetItemsForText(auth, args.BaseUrl, args.Name)
@@ -153,6 +163,80 @@ func GetEpisodesToDownload(auth *jf_requests.AuthResponse, args *Arguments) ([]j
 
 }
 
+func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_requests.Item, seasonId string) bool {
+	episodes, err := jf_requests.GetEpisodesFromId(auth.Token, baseurl, item.Id)
+	if err != nil {
+		color.Red("Failed to obtain Episode Information for given id: %s", err)
+		return false
+	}
+
+	if seasonId != "" {
+		episodes = jf_requests.FilterEpisodesForSeason(episodes, seasonId)
+	}
+
+	if PrintSeriesSummary(episodes) {
+		jf_requests.DownloadEpisodes(episodes)
+	} else {
+		return false
+	}
+
+	return true
+}
+
+func DownloadMovie(auth *jf_requests.AuthResponse, baseurl string, item *jf_requests.Item) bool {
+	movie, err := jf_requests.GetMovieFromItem(auth, baseurl, item)
+	if err != nil {
+		color.Red("Failed to obtain Movie for given id: %s", err)
+		return false
+	}
+
+	if PrintMovieSummary(movie) {
+		jf_requests.DownloadMovie(movie)
+	} else {
+		return false
+	}
+
+	return true
+}
+
+func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
+	if args.SeriesId != "" {
+		item, err := jf_requests.GetItemForId(auth, args.BaseUrl, args.SeriesId)
+		if err != nil {
+			color.Red("Failed to obtain items for given id: %s", err)
+			return false
+		}
+
+		if item.Type == "Series" {
+			return DownloadSeries(auth, args.BaseUrl, item, args.SeasonId)
+		} else {
+			return DownloadMovie(auth, args.BaseUrl, item)
+		}
+
+	} else if args.Name != "" {
+		items, err := jf_requests.GetItemsForText(auth, args.BaseUrl, args.Name)
+		if err != nil {
+			color.Red("Failed to obtain Episode Information for given id: %s", err)
+			return false
+		}
+
+		item, err := PrintItemSelection(items)
+		if err != nil {
+			color.Red(err.Error())
+			return false
+		}
+
+		if item.Type == "Series" {
+			return DownloadSeries(auth, args.BaseUrl, item, "")
+		} else {
+			return DownloadMovie(auth, args.BaseUrl, item)
+		}
+
+	}
+
+	return false
+}
+
 func main() {
 	args := ParseCLIArgs()
 
@@ -170,16 +254,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	episodesToDownload, err := GetEpisodesToDownload(creds, args)
-	if err != nil {
-		color.Red("Failed to obtain episodes to download: %s", err)
-		os.Exit(1)
-	}
-
-	shouldDownload := PrintSummarry(episodesToDownload)
-
-	if shouldDownload {
-		jf_requests.Download(episodesToDownload)
-	}
-
+	Download(args, creds)
 }
