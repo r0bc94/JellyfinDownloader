@@ -44,3 +44,7 @@ func Download(episodes []Episode) {
 		DownloadFromUrl(&episode, outfilename, len(episodes), idx)
 	}
 }
+
+func GetDownloadLinkForId(baseUrl string, token string, id string) string {
+	return fmt.Sprintf(baseUrl+"/Items/%s/Download?api_key=%s", id, token)
+}
