@@ -127,42 +127,6 @@ func PrintItemSelection(itemsToSelect []jf_requests.Item) (*jf_requests.Item, er
 	}
 }
 
-func GetEpisodesToDownload(auth *jf_requests.AuthResponse, args *Arguments) ([]jf_requests.Episode, error) {
-	seriesId := args.SeriesId
-	if args.Name != "" {
-		all, err := jf_requests.GetItemsForText(auth, args.BaseUrl, args.Name)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Could not get Items: %s", err))
-		}
-
-		if len(all) == 0 {
-			return nil, errors.New("Nothing found for given searchtext")
-		} else if len(all) == 1 {
-			seriesId = all[0].Id
-		} else {
-			series, err := PrintItemSelection(all)
-			if err != nil {
-				return nil, err
-			}
-
-			seriesId = series.Id
-		}
-
-	}
-
-	episodes, err := jf_requests.GetEpisodesFromId(auth.Token, args.BaseUrl, seriesId)
-	if err != nil {
-		return nil, err
-	}
-
-	if args.SeasonId != "" {
-		return jf_requests.FilterEpisodesForSeason(episodes, args.SeasonId), nil
-	}
-
-	return episodes, nil
-
-}
-
 func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_requests.Item, seasonId string) bool {
 	episodes, err := jf_requests.GetEpisodesFromId(auth.Token, baseurl, item.Id)
 	if err != nil {
@@ -254,5 +218,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	Download(args, creds)
+	result := Download(args, creds)
+	if !result {
+		os.Exit(1)
+	}
 }
