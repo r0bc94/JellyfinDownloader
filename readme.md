@@ -81,7 +81,7 @@ Usage of /tmp/go-build3025870274/b001/exe/main:
 
 - [x] Instead of fiddling with Ids, one should only provide the series name and episode number which should be downloaded
 - [ ] Retrieve the credentials via an environnement variable
-- [ ] Be able to search and download any media types, starting with movies
+- [x] Be able to search and download any media types, starting with movies
 - There are probably some other things which should be done whose will come to my mind later on
 
 
