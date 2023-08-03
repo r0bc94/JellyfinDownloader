@@ -54,7 +54,7 @@ To download a specific episode, you need to call the tool like this:
 ```bash
 jellyfindownloader \
     -url <BaseURL of the JF Server> \
-    -seriesid <ID of the series you want to download> 
+    -seriesid <ID of the series you want to download> \
     -seasonid <ID of the season to download>
 ```
 
