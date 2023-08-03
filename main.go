@@ -56,6 +56,8 @@ func CheckArguments(args *Arguments) (bool, string) {
 func GetUsername(args *Arguments) string {
 	if args.Username != "" {
 		return args.Username
+	} else if username := os.Getenv("JF_USERNAME"); username != "" {
+		return username
 	}
 
 	fmt.Printf("Username: ")
@@ -68,6 +70,8 @@ func GetUsername(args *Arguments) string {
 func GetPassword(args *Arguments) string {
 	if args.Password != "" {
 		return args.Password
+	} else if password := os.Getenv("JF_PASSWORD"); password != "" {
+		return password
 	}
 
 	fmt.Printf("Password: ")
@@ -214,7 +218,7 @@ func main() {
 
 	creds, err := jf_requests.Authorize(args.BaseUrl, username, password)
 	if err != nil {
-		fmt.Println(err)
+		color.Red("Authentication Failed! Maybe wrong credentials provided?")
 		os.Exit(1)
 	}
 
