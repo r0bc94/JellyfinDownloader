@@ -56,6 +56,8 @@ func CheckArguments(args *Arguments) (bool, string) {
 func GetUsername(args *Arguments) string {
 	if args.Username != "" {
 		return args.Username
+	} else if username := os.Getenv("JF_USERNAME"); username != "" {
+		return username
 	}
 
 	fmt.Printf("Username: ")
@@ -68,6 +70,8 @@ func GetUsername(args *Arguments) string {
 func GetPassword(args *Arguments) string {
 	if args.Password != "" {
 		return args.Password
+	} else if password := os.Getenv("JF_PASSWORD"); password != "" {
+		return password
 	}
 
 	fmt.Printf("Password: ")
