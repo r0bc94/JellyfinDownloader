@@ -11,8 +11,8 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-func DownloadFromUrl(episode *Episode, outfile string, max int, current int) error {
-	req, _ := http.NewRequest("GET", episode.DownloadLink, nil)
+func DownloadFromUrl(downloadLink string, name string, outfile string, max int, current int) error {
+	req, _ := http.NewRequest("GET", downloadLink, nil)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -30,17 +30,27 @@ func DownloadFromUrl(episode *Episode, outfile string, max int, current int) err
 
 	bar := progressbar.DefaultBytes(
 		resp.ContentLength,
-		fmt.Sprintf("Downloading %d/%d %s: ", current+1, max, episode.Name),
+		fmt.Sprintf("Downloading %d/%d %s: ", current+1, max, name),
 	)
 	io.Copy(io.MultiWriter(f, bar), resp.Body)
 
 	return nil
 }
 
-func Download(episodes []Episode) {
+func DownloadEpisodes(episodes []Episode) {
 	for idx, episode := range episodes {
 		suffix := strings.Split(episode.Container, ",")[0]
 		outfilename := fmt.Sprintf("%s_%s.%s", episode.SeriesName, episode.Name, suffix)
-		DownloadFromUrl(&episode, outfilename, len(episodes), idx)
+		DownloadFromUrl(episode.DownloadLink, episode.Name, outfilename, len(episodes), idx)
 	}
+}
+
+func DownloadMovie(movie *Movie) {
+	suffix := strings.Split(movie.Container, ",")[0]
+	outfilename := fmt.Sprintf("%s_%s.%s", movie.Name, movie.Name, suffix)
+	DownloadFromUrl(movie.DownloadLink, movie.Name, outfilename, 1, 0)
+}
+
+func GetDownloadLinkForId(baseUrl string, token string, id string) string {
+	return fmt.Sprintf(baseUrl+"/Items/%s/Download?api_key=%s", id, token)
 }

@@ -2,6 +2,8 @@
 
 This is a simple tool written in Go to download a Series or a single season from a given jellyfin instance. 
 
+_Note: Currently, it works only for Series / TV Shows. I'll also make it work for movies in the future._
+
 ## Disclaimer
 
 Since I've written this in order to learn go, not everything might be very written _as it should_. Also keep in mind
@@ -9,9 +11,17 @@ that not everything might be work as expected.
 
 ## Usage
 
-Currently, you have to provide the series id or also the season id. You can extract the ID from the jellyfin, as its a simple url parameter. 
+You can use multiple methods to specify the series you want to download. 
 
-For example, if you click on a series you want to download, the series ID can be found here: 
+The simplest method is to just specify a name of the series you want to get: 
+
+```bash
+jellyfindownloader -url <BaseURL of the JF Server> -name <Partial or Full Name of the Show>
+```
+
+Another way is to specify the series Id. 
+To obtain the Id of the show you want to download, you first have to navigate to the shows main page
+in the jellyfin web client. After opening the shows main page, you can extract the seriesId from the URL: 
 
 ```
 http://localhost:8096/web/index.html#!/details?
@@ -52,7 +62,9 @@ You can also pass additional argument such as the username or password. If those
 
 ```
 ./jellyfindownloader -h
-Usage of ./jellyfindownloader:
+Usage of /tmp/go-build3025870274/b001/exe/main:
+  -name string
+        Name of the Show or Movie you want to download.
   -password string
         Passwort for the Jellyfin instance. If not provided, username will be prompted.
   -seasonid string
@@ -67,8 +79,8 @@ Usage of ./jellyfindownloader:
 
 ## Todo
 
-- [ ] Instead of fiddling with Ids, one should only provide the series name and episode number which should be downloaded
+- [x] Instead of fiddling with Ids, one should only provide the series name and episode number which should be downloaded
 - [ ] Retrieve the credentials via an environnement variable
+- [x] Be able to search and download any media types, starting with movies
+- [ ] Implement a selection for different seasons
 - There are probably some other things which should be done whose will come to my mind later on
-
-
