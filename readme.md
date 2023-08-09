@@ -2,8 +2,6 @@
 
 This is a simple tool written in Go to download a Series or a single season from a given jellyfin instance. 
 
-_Note: Currently, it works only for Series / TV Shows. I'll also make it work for movies in the future._
-
 ## Disclaimer
 
 Since I've written this in order to learn go, not everything might be very written _as it should_. Also keep in mind
