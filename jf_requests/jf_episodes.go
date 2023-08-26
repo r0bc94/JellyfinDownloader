@@ -16,6 +16,12 @@ type Episode struct {
 	DownloadLink string
 }
 
+type Season struct {
+	Id       string
+	Name     string
+	Episodes []Episode
+}
+
 func GetEpisodesFromId(token string, baseurl string, seriesId string) ([]Episode, error) {
 	requestUrl := fmt.Sprintf("%s/Shows/%s/Episodes", baseurl, seriesId)
 
@@ -62,4 +68,29 @@ func FilterEpisodesForSeason(episodes []Episode, seasonId string) []Episode {
 	}
 
 	return episodesForSeason
+}
+
+// TODO: Assume that episodes are unordered
+func OrderSeasonsByEpisodes(episodes []Episode) []Season {
+	var seasons []Season
+
+	var lastEp Episode
+	for _, episode := range episodes {
+
+		seasonIsNew := lastEp.SeasonId != "" && lastEp.SeasonId != episode.SeasonId
+		if len(seasons) == 0 || seasonIsNew {
+			newSeason := Season{
+				Id:       episode.SeasonId,
+				Name:     episode.SeasonName,
+				Episodes: append(make([]Episode, 1), episode)}
+
+			seasons = append(seasons, newSeason)
+		} else {
+			seasons[len(seasons)-1].Episodes = append(seasons[len(seasons)-1].Episodes, episode)
+		}
+
+		lastEp = episode
+	}
+
+	return seasons
 }
