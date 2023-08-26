@@ -128,7 +128,7 @@ func PrintSeriesSummary(episodes []jf_requests.Episode) bool {
 	color.Green("Series: %s", episodes[0].SeriesName)
 	color.Green("Episodes:")
 	for idx, episode := range episodes {
-		color.Cyan("  %d. %s", idx, episode.Name)
+		color.Cyan("  %d. %s", idx+1, episode.Name)
 	}
 
 	return GetConfirmation()
