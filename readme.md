@@ -98,5 +98,5 @@ Provide a password which should be used to log into the provided jellyfin instan
 - [x] Instead of fiddling with Ids, one should only provide the series name and episode number which should be downloaded
 - [x] Retrieve the credentials via an environnement variable
 - [x] Be able to search and download any media types, starting with movies
-- [ ] Implement a selection for different seasons
+- [x] Implement a selection for different seasons
 - There are probably some other things which should be done whose will come to my mind later on
