@@ -56,6 +56,8 @@ func CheckArguments(args *Arguments) (bool, string) {
 func GetUsername(args *Arguments) string {
 	if args.Username != "" {
 		return args.Username
+	} else if username := os.Getenv("JF_USERNAME"); username != "" {
+		return username
 	}
 
 	fmt.Printf("Username: ")
@@ -68,6 +70,8 @@ func GetUsername(args *Arguments) string {
 func GetPassword(args *Arguments) string {
 	if args.Password != "" {
 		return args.Password
+	} else if password := os.Getenv("JF_PASSWORD"); password != "" {
+		return password
 	}
 
 	fmt.Printf("Password: ")
@@ -93,12 +97,38 @@ func PrintMovieSummary(movie *jf_requests.Movie) bool {
 	return GetConfirmation()
 }
 
+func PrintSeasonSelection(seasons []jf_requests.Season) (string, error) {
+	fmt.Println("Which Seasons do you want to download:")
+
+	color.Cyan("  0. All")
+	for idx, season := range seasons {
+		color.Cyan("  %d. %s", idx+1, season.Name)
+	}
+
+	fmt.Print("==> ")
+	reader := bufio.NewReader(os.Stdin)
+	response, _ := reader.ReadString('\n')
+	response = strings.Split(response, "\n")[0]
+	if selection, err := strconv.Atoi(response); err == nil {
+		if selection < 0 || selection > len(seasons) {
+			return "", errors.New("Invalid Selection")
+		} else if selection == 0 {
+			return "", nil
+		}
+
+		return seasons[selection-1].Id, nil
+	} else {
+		fmt.Println(err)
+		return "", errors.New("Only provide a single number")
+	}
+}
+
 func PrintSeriesSummary(episodes []jf_requests.Episode) bool {
 	fmt.Println("The following Episodes will be downloaded:")
 	color.Green("Series: %s", episodes[0].SeriesName)
 	color.Green("Episodes:")
 	for idx, episode := range episodes {
-		color.Cyan("  %d. %s", idx, episode.Name)
+		color.Cyan("  %d. %s", idx+1, episode.Name)
 	}
 
 	return GetConfirmation()
@@ -132,6 +162,12 @@ func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_req
 	if err != nil {
 		color.Red("Failed to obtain Episode Information for given id: %s", err)
 		return false
+	}
+
+	seasons := jf_requests.OrderSeasonsByEpisodes(episodes)
+
+	if seasonId == "" {
+		seasonId, _ = PrintSeasonSelection(seasons)
 	}
 
 	if seasonId != "" {
@@ -214,7 +250,7 @@ func main() {
 
 	creds, err := jf_requests.Authorize(args.BaseUrl, username, password)
 	if err != nil {
-		fmt.Println(err)
+		color.Red("Authentication Failed! Maybe wrong credentials provided?")
 		os.Exit(1)
 	}
 

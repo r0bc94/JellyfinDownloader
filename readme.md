@@ -2,8 +2,6 @@
 
 This is a simple tool written in Go to download a Series or a single season from a given jellyfin instance. 
 
-_Note: Currently, it works only for Series / TV Shows. I'll also make it work for movies in the future._
-
 ## Disclaimer
 
 Since I've written this in order to learn go, not everything might be very written _as it should_. Also keep in mind
@@ -54,7 +52,7 @@ To download a specific episode, you need to call the tool like this:
 ```bash
 jellyfindownloader \
     -url <BaseURL of the JF Server> \
-    -seriesid <ID of the series you want to download> 
+    -seriesid <ID of the series you want to download> \
     -seasonid <ID of the season to download>
 ```
 
@@ -77,10 +75,28 @@ Usage of /tmp/go-build3025870274/b001/exe/main:
         Username used to login to the Jellyfin instance. If not provided, password will be prompted.
 ```
 
+### Environment Variables
+
+Currently, there are the following environment variables which can be set before executing this tool: 
+
+```
+JF_USERNAME
+```
+
+Provide a username which should be used to log into the provided jellyfin instance. 
+
+--- 
+
+```
+JF_PASSWORD
+```
+
+Provide a password which should be used to log into the provided jellyfin instance. 
+
 ## Todo
 
 - [x] Instead of fiddling with Ids, one should only provide the series name and episode number which should be downloaded
-- [ ] Retrieve the credentials via an environnement variable
+- [x] Retrieve the credentials via an environnement variable
 - [x] Be able to search and download any media types, starting with movies
-- [ ] Implement a selection for different seasons
+- [x] Implement a selection for different seasons
 - There are probably some other things which should be done whose will come to my mind later on
