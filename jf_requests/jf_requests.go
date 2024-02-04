@@ -53,7 +53,16 @@ func ExecuteRequest(request *http.Request) (map[string]any, error) {
 // When successfull, an auth token wich can be used for further requests is returned.
 func Authorize(baseUrl string, username string, password string) (*AuthResponse, error) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	requestUrl := fmt.Sprintf("%s/Users/AuthenticateByName", baseUrl)
+
+	sanitizedBaseUrl := baseUrl
+	// Strip the leading / from the baseurl, if there is any
+	if string(baseUrl[len(baseUrl)-1]) == "/" {
+		sanitizedBaseUrl = baseUrl[:len(baseUrl)-1]
+	}
+
+	fmt.Println(sanitizedBaseUrl)
+
+	requestUrl := fmt.Sprintf("%s/Users/AuthenticateByName", sanitizedBaseUrl)
 
 	// Create Request Body with Credentials
 	reqbody := &AuthRequestBody{Username: username, Pw: password}
