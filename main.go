@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"jf_requests/jf_requests"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -44,6 +45,13 @@ func ParseCLIArgs() *Arguments {
 func CheckArguments(args *Arguments) (bool, string) {
 	if args.BaseUrl == "" {
 		return false, "No URL was given. See -h for more information"
+	}
+
+	// Check if the URL was specified in the correct format.
+	urlpattern := `https?\:\/\/[\d\w._-]+(:\d+)?\/?([/\d\w._-]*?)?$`
+	match, err := regexp.Match(urlpattern, []byte(args.BaseUrl))
+	if !match || err != nil {
+		return false, "URL was supplied in the wrong pattern. The URL must be supplied like so: http(s)://myserver(:123)(/). Instead of the whole hostname, you can also specify the IPv4 address which is pointing to your Jellyfin server."
 	}
 
 	if args.SeriesId == "" && args.Name == "" {
