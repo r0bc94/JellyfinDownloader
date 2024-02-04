@@ -250,7 +250,8 @@ func main() {
 
 	creds, err := jf_requests.Authorize(args.BaseUrl, username, password)
 	if err != nil {
-		color.Red("Authentication Failed! Maybe wrong credentials provided?")
+		color.Red("Authentication Failed!\n")
+		color.Red("%s\n", err)
 		os.Exit(1)
 	}
 
