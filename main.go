@@ -228,6 +228,11 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 			return false
 		}
 
+		if len(items) == 0 {
+			color.Yellow("Did not found anything for the given Searchterm on the Server.")
+			return false
+		}
+
 		item, err := PrintItemSelection(items)
 		if err != nil {
 			color.Red(err.Error())
