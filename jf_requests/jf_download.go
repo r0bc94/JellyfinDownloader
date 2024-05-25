@@ -28,10 +28,10 @@ func DownloadFromUrl(downloadLink string, name string, outfile string, max int, 
 
 	defer f.Close()
 
-	bar := progressbar.DefaultBytes(
-		resp.ContentLength,
-		fmt.Sprintf("Downloading %d/%d %s: ", current+1, max, name),
-	)
+	bar, _ := progressbar.DefaultBytes(
+		resp.ContentLength, fmt.Sprintf("Downloading %d/%d %s: ", current+1, max, name)),
+		progressbar.OptionUseANSICodes(true)
+
 	io.Copy(io.MultiWriter(f, bar), resp.Body)
 
 	return nil
