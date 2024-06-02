@@ -60,8 +60,6 @@ func Authorize(baseUrl string, username string, password string) (*AuthResponse,
 		sanitizedBaseUrl = baseUrl[:len(baseUrl)-1]
 	}
 
-	fmt.Println(sanitizedBaseUrl)
-
 	requestUrl := fmt.Sprintf("%s/Users/AuthenticateByName", sanitizedBaseUrl)
 
 	// Create Request Body with Credentials
