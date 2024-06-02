@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"jf_requests/jf_requests"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -15,6 +16,8 @@ import (
 	"golang.org/x/term"
 )
 
+const VERSION string = "v1.2.1"
+
 type Arguments struct {
 	BaseUrl  string
 	Username string
@@ -22,6 +25,7 @@ type Arguments struct {
 	SeriesId string
 	SeasonId string
 	Name     string
+	Version  bool
 }
 
 // Parses the command line arguments and returns a struct containing all found arguments.
@@ -34,6 +38,7 @@ func ParseCLIArgs() *Arguments {
 	flag.StringVar(&args.Username, "username", "", "Username used to login to the Jellyfin instance. If not provided, password will be prompted.")
 	flag.StringVar(&args.Password, "password", "", "Passwort for the Jellyfin instance. If not provided, username will be prompted.")
 	flag.StringVar(&args.Name, "name", "", "Name of the Show or Movie you want to download.")
+	flag.BoolVar(&args.Version, "version", false, "Shows the Version Informations and Exit")
 
 	flag.Parse()
 
@@ -44,6 +49,13 @@ func ParseCLIArgs() *Arguments {
 func CheckArguments(args *Arguments) (bool, string) {
 	if args.BaseUrl == "" {
 		return false, "No URL was given. See -h for more information"
+	}
+
+	// Check if the URL was specified in the correct format.
+	urlpattern := `https?\:\/\/[\d\w._-]+(:\d+)?\/?([/\d\w._-]*?)?$`
+	match, err := regexp.Match(urlpattern, []byte(args.BaseUrl))
+	if !match || err != nil {
+		return false, "URL was supplied in the wrong pattern. The URL must be supplied like so: http(s)://myserver(:123)(/). Instead of the whole hostname, you can also specify the IPv4 address which is pointing to your Jellyfin server."
 	}
 
 	if args.SeriesId == "" && args.Name == "" {
@@ -220,6 +232,11 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 			return false
 		}
 
+		if len(items) == 0 {
+			color.Yellow("Did not found anything for the given Searchterm on the Server.")
+			return false
+		}
+
 		item, err := PrintItemSelection(items)
 		if err != nil {
 			color.Red(err.Error())
@@ -237,8 +254,17 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 	return false
 }
 
+func ShowVersionInfo() {
+	fmt.Printf("JellyfinDownloader Version: %s\n", VERSION)
+}
+
 func main() {
 	args := ParseCLIArgs()
+
+	if args.Version {
+		ShowVersionInfo()
+		os.Exit(0)
+	}
 
 	if status, msg := CheckArguments(args); !status {
 		color.Red("Wrong Arguments: %s\n", msg)
@@ -250,7 +276,8 @@ func main() {
 
 	creds, err := jf_requests.Authorize(args.BaseUrl, username, password)
 	if err != nil {
-		color.Red("Authentication Failed! Maybe wrong credentials provided?")
+		color.Red("Authentication Failed!\n")
+		color.Red("%s\n", err)
 		os.Exit(1)
 	}
 

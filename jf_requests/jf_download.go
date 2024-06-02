@@ -7,9 +7,30 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/schollz/progressbar/v3"
 )
+
+func CreatePBar(length int64, description string) *progressbar.ProgressBar {
+	desc := ""
+	return progressbar.NewOptions64(
+		length,
+		progressbar.OptionSetDescription(desc),
+		progressbar.OptionSetWriter(os.Stderr),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionSetWidth(10),
+		progressbar.OptionThrottle(65*time.Millisecond),
+		progressbar.OptionShowCount(),
+		progressbar.OptionOnCompletion(func() {
+			fmt.Fprint(os.Stderr, "\n")
+		}),
+		progressbar.OptionSpinnerType(14),
+		progressbar.OptionFullWidth(),
+		progressbar.OptionSetRenderBlankState(true),
+		progressbar.OptionUseANSICodes(true),
+	)
+}
 
 func DownloadFromUrl(downloadLink string, name string, outfile string, max int, current int) error {
 	req, _ := http.NewRequest("GET", downloadLink, nil)
@@ -28,10 +49,7 @@ func DownloadFromUrl(downloadLink string, name string, outfile string, max int, 
 
 	defer f.Close()
 
-	bar := progressbar.DefaultBytes(
-		resp.ContentLength,
-		fmt.Sprintf("Downloading %d/%d %s: ", current+1, max, name),
-	)
+	bar := CreatePBar(resp.ContentLength, fmt.Sprintf("downloading %d/%d", current, max))
 	io.Copy(io.MultiWriter(f, bar), resp.Body)
 
 	return nil
