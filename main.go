@@ -16,6 +16,8 @@ import (
 	"golang.org/x/term"
 )
 
+const VERSION string = "v1.2.1"
+
 type Arguments struct {
 	BaseUrl  string
 	Username string
@@ -23,6 +25,7 @@ type Arguments struct {
 	SeriesId string
 	SeasonId string
 	Name     string
+	Version  bool
 }
 
 // Parses the command line arguments and returns a struct containing all found arguments.
@@ -35,6 +38,7 @@ func ParseCLIArgs() *Arguments {
 	flag.StringVar(&args.Username, "username", "", "Username used to login to the Jellyfin instance. If not provided, password will be prompted.")
 	flag.StringVar(&args.Password, "password", "", "Passwort for the Jellyfin instance. If not provided, username will be prompted.")
 	flag.StringVar(&args.Name, "name", "", "Name of the Show or Movie you want to download.")
+	flag.BoolVar(&args.Version, "version", false, "Shows the Version Informations and Exit")
 
 	flag.Parse()
 
@@ -250,8 +254,17 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 	return false
 }
 
+func ShowVersionInfo() {
+	fmt.Printf("JellyfinDownloader Version: %s\n", VERSION)
+}
+
 func main() {
 	args := ParseCLIArgs()
+
+	if args.Version {
+		ShowVersionInfo()
+		os.Exit(0)
+	}
 
 	if status, msg := CheckArguments(args); !status {
 		color.Red("Wrong Arguments: %s\n", msg)
