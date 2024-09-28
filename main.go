@@ -2,14 +2,12 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"flag"
 	"fmt"
 	"jf_requests/jf_requests"
 	"os"
 	"regexp"
 	"runtime"
-	"strconv"
 	"strings"
 	"syscall"
 
@@ -46,7 +44,8 @@ func ParseCLIArgs() *Arguments {
 	return &args
 }
 
-// Checks, if all necessary cli arguments are passed.
+// Checks, if all necessarry cli arguments are passed.
+// Checks, if all necessarry cli arguments are passed.
 func CheckArguments(args *Arguments) (bool, string) {
 	if args.BaseUrl == "" {
 		return false, "No URL was given. See -h for more information"
@@ -99,6 +98,15 @@ func GetPassword(args *Arguments) string {
 	return string(bytePassword)
 }
 
+func GetConfirmation() bool {
+	fmt.Print("Continue? y/n: ")
+	reader := bufio.NewReader(os.Stdin)
+	response, _ := reader.ReadString('\n')
+	response = strings.ToLower(strings.TrimSpace(response))
+
+	return response == "y"
+}
+
 func PrintItemSelection(itemsToSelect []jf_requests.Item) (*jf_requests.Item, error) {
 	fmt.Println("Found multiple Shows for the given Searchterm. Please Select the show you want to download:")
 
@@ -106,26 +114,12 @@ func PrintItemSelection(itemsToSelect []jf_requests.Item) (*jf_requests.Item, er
 		color.Cyan("  %d. %s", idx+1, show.Name)
 	}
 
-	fmt.Print("==> ")
-	reader := bufio.NewReader(os.Stdin)
-	response, _ := reader.ReadString('\n')
-
-	if runtime.GOOS == "windows" {
-		response = strings.TrimSuffix(response, "\r\n")
-	} else {
-		response = strings.TrimSuffix(response, "\n")
+	choice, err := jf_requests.GetUserChoice(len(itemsToSelect))
+	if err != nil {
+		return nil, err
 	}
 
-	if selection, err := strconv.Atoi(response); err == nil {
-		if selection < 0 || selection > len(itemsToSelect) {
-			return nil, errors.New("Invalid Selection")
-		}
-
-		return &itemsToSelect[selection-1], nil
-	} else {
-		fmt.Println(err)
-		return nil, errors.New("Only provide a single number")
-	}
+	return &itemsToSelect[choice], nil
 }
 
 func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_requests.Item, seasonId string) bool {
@@ -171,7 +165,7 @@ func DownloadMovie(auth *jf_requests.AuthResponse, baseurl string, item *jf_requ
 	}
 
 	if movie.PrintAndGetConfirmation() {
-		movie.Download()
+		jf_requests.DownloadMovie(movie)
 	} else {
 		return false
 	}

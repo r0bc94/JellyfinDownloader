@@ -1,11 +1,8 @@
 package jf_requests
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
@@ -104,25 +101,17 @@ func (series *Series) PrintAndGetSelection() ([]Season, error) {
 		color.Cyan("  %d. %s", idx+1, season.Name)
 	}
 
-	fmt.Print("==> ")
-	reader := bufio.NewReader(os.Stdin)
-	response, _ := reader.ReadString('\n')
-	response = strings.Split(response, "\n")[0]
-	if selection, err := strconv.Atoi(response); err == nil {
-		if selection < 0 || selection > len(series.Seasons) {
-			return nil, errors.New("Invalid Selection")
-		}
-
-		if selection == 0 {
-			return series.Seasons, nil
-		} else {
-			return []Season{series.Seasons[selection-1]}, nil
-		}
-
-	} else {
-		fmt.Println(err)
+	choice, err := GetUserChoice(len(series.Seasons))
+	if err != nil {
 		return nil, errors.New("Only provide a single number")
 	}
+
+	if choice == 0 {
+		return series.Seasons, nil
+	} else {
+		return []Season{series.Seasons[choice]}, nil
+	}
+
 }
 
 func (series *Series) PrintAndGetConfirmation(seasonsToDownload []Season) bool {
