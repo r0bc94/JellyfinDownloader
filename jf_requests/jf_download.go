@@ -55,11 +55,13 @@ func DownloadFromUrl(downloadLink string, name string, outfile string, max int, 
 	return nil
 }
 
-func DownloadEpisodes(episodes []Episode) {
-	for idx, episode := range episodes {
-		suffix := strings.Split(episode.Container, ",")[0]
-		outfilename := fmt.Sprintf("%s_%s.%s", episode.SeriesName, episode.Name, suffix)
-		DownloadFromUrl(episode.DownloadLink, episode.Name, outfilename, len(episodes), idx)
+func DownloadEpisodes(seasons []Season) {
+	for _, season := range seasons {
+		for idx, episode := range season.Episodes {
+			suffix := strings.Split(episode.Container, ",")[0]
+			outfilename := fmt.Sprintf("%s_%s.%s", season.Name, episode.Name, suffix)
+			DownloadFromUrl(episode.DownloadLink, episode.Name, outfilename, len(season.Episodes), idx)
+		}
 	}
 }
 
