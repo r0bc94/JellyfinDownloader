@@ -46,7 +46,7 @@ func ParseCLIArgs() *Arguments {
 	return &args
 }
 
-// Checks, if all necessarry cli arguments are passed.
+// Checks, if all necessary cli arguments are passed.
 func CheckArguments(args *Arguments) (bool, string) {
 	if args.BaseUrl == "" {
 		return false, "No URL was given. See -h for more information"
