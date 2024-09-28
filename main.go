@@ -119,7 +119,7 @@ func PrintItemSelection(itemsToSelect []jf_requests.Item) (*jf_requests.Item, er
 		return nil, err
 	}
 
-	return &itemsToSelect[choice], nil
+	return &itemsToSelect[choice-1], nil
 }
 
 func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_requests.Item, seasonId string) bool {

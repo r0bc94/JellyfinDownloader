@@ -28,7 +28,7 @@ func GetUserChoice(number_of_choices int) (int, error) {
 			return -1, errors.New("Invalid Selection")
 		}
 
-		return selection - 1, nil
+		return selection, nil
 	} else {
 		fmt.Println(err)
 		return -1, errors.New("Only provide a single number")
