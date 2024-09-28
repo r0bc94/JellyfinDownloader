@@ -155,7 +155,9 @@ func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_req
 	confirm := series.PrintAndGetConfirmation(selected_seasons)
 
 	if confirm {
-		jf_requests.DownloadEpisodes(selected_seasons)
+		for _, season := range selected_seasons {
+			season.Download()
+		}
 	}
 
 	return true
@@ -169,7 +171,7 @@ func DownloadMovie(auth *jf_requests.AuthResponse, baseurl string, item *jf_requ
 	}
 
 	if movie.PrintAndGetConfirmation() {
-		jf_requests.DownloadMovie(movie)
+		movie.Download()
 	} else {
 		return false
 	}
