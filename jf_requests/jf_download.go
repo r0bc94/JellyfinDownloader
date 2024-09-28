@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/schollz/progressbar/v3"
@@ -53,22 +52,6 @@ func DownloadFromUrl(downloadLink string, name string, outfile string, max int, 
 	io.Copy(io.MultiWriter(f, bar), resp.Body)
 
 	return nil
-}
-
-func DownloadEpisodes(seasons []Season) {
-	for _, season := range seasons {
-		for idx, episode := range season.Episodes {
-			suffix := strings.Split(episode.Container, ",")[0]
-			outfilename := fmt.Sprintf("%s_%s.%s", season.Name, episode.Name, suffix)
-			DownloadFromUrl(episode.DownloadLink, episode.Name, outfilename, len(season.Episodes), idx)
-		}
-	}
-}
-
-func DownloadMovie(movie *Movie) {
-	suffix := strings.Split(movie.Container, ",")[0]
-	outfilename := fmt.Sprintf("%s_%s.%s", movie.Name, movie.Name, suffix)
-	DownloadFromUrl(movie.DownloadLink, movie.Name, outfilename, 1, 0)
 }
 
 func GetDownloadLinkForId(baseUrl string, token string, id string) string {

@@ -3,6 +3,7 @@ package jf_requests
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/fatih/color"
 )
@@ -44,4 +45,10 @@ func (movie *Movie) PrintAndGetConfirmation() bool {
 	color.Green("Name: %s", movie.Name)
 
 	return GetConfirmation()
+}
+
+func (movie *Movie) Download() {
+	suffix := strings.Split(movie.Container, ",")[0]
+	outfilename := fmt.Sprintf("%s_%s.%s", movie.Name, movie.Name, suffix)
+	DownloadFromUrl(movie.DownloadLink, movie.Name, outfilename, 1, 0)
 }
