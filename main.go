@@ -99,15 +99,6 @@ func GetPassword(args *Arguments) string {
 	return string(bytePassword)
 }
 
-func GetConfirmation() bool {
-	fmt.Print("Continue? y/n: ")
-	reader := bufio.NewReader(os.Stdin)
-	response, _ := reader.ReadString('\n')
-	response = strings.ToLower(strings.TrimSpace(response))
-
-	return response == "y"
-}
-
 func PrintItemSelection(itemsToSelect []jf_requests.Item) (*jf_requests.Item, error) {
 	fmt.Println("Found multiple Shows for the given Searchterm. Please Select the show you want to download:")
 
