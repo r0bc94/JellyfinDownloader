@@ -8,6 +8,7 @@ import (
 	"jf_requests/jf_requests"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -76,6 +77,11 @@ func GetUsername(args *Arguments) string {
 	reader := bufio.NewReader(os.Stdin)
 	username, _ := reader.ReadString('\n')
 
+	if runtime.GOOS == "windows" {
+		return strings.TrimSuffix(username, "\r\n")
+
+	}
+
 	return strings.TrimSuffix(username, "\n")
 }
 
@@ -120,7 +126,13 @@ func PrintSeasonSelection(seasons []jf_requests.Season) (string, error) {
 	fmt.Print("==> ")
 	reader := bufio.NewReader(os.Stdin)
 	response, _ := reader.ReadString('\n')
-	response = strings.Split(response, "\n")[0]
+
+	if runtime.GOOS == "windows" {
+		response = strings.TrimSuffix(response, "\n\r")
+	} else {
+		response = strings.TrimSuffix(response, "\n")
+	}
+
 	if selection, err := strconv.Atoi(response); err == nil {
 		if selection < 0 || selection > len(seasons) {
 			return "", errors.New("Invalid Selection")
@@ -156,7 +168,13 @@ func PrintItemSelection(itemsToSelect []jf_requests.Item) (*jf_requests.Item, er
 	fmt.Print("==> ")
 	reader := bufio.NewReader(os.Stdin)
 	response, _ := reader.ReadString('\n')
-	response = strings.Split(response, "\n")[0]
+
+	if runtime.GOOS == "windows" {
+		response = strings.TrimSuffix(response, "\r\n")
+	} else {
+		response = strings.TrimSuffix(response, "\n")
+	}
+
 	if selection, err := strconv.Atoi(response); err == nil {
 		if selection < 0 || selection > len(itemsToSelect) {
 			return nil, errors.New("Invalid Selection")
