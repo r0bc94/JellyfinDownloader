@@ -165,7 +165,7 @@ func DownloadMovie(auth *jf_requests.AuthResponse, baseurl string, item *jf_requ
 	}
 
 	if movie.PrintAndGetConfirmation() {
-		jf_requests.DownloadMovie(movie)
+		movie.Download()
 	} else {
 		return false
 	}
