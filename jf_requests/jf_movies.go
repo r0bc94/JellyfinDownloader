@@ -3,6 +3,9 @@ package jf_requests
 import (
 	"errors"
 	"fmt"
+	"strings"
+
+	"github.com/fatih/color"
 )
 
 type Movie struct {
@@ -35,4 +38,17 @@ func GetMovieFromItem(auth *AuthResponse, baseurl string, item *Item) (*Movie, e
 	mov.DownloadLink = GetDownloadLinkForId(baseurl, auth.Token, mov.Id)
 
 	return &mov, nil
+}
+
+func (movie *Movie) PrintAndGetConfirmation() bool {
+	fmt.Println("The following Movie will be downloaded:")
+	color.Green("Name: %s", movie.Name)
+
+	return GetConfirmation()
+}
+
+func (movie *Movie) Download() {
+	suffix := strings.Split(movie.Container, ",")[0]
+	outfilename := fmt.Sprintf("%s_%s.%s", movie.Name, movie.Name, suffix)
+	DownloadFromUrl(movie.DownloadLink, movie.Name, outfilename, 1, 0)
 }

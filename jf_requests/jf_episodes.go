@@ -1,17 +1,16 @@
 package jf_requests
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/fatih/color"
 )
 
 type Episode struct {
-	SeriesName   string
 	Name         string
 	Id           string
-	SeasonId     string
-	SeasonName   string
 	Container    string
 	DownloadLink string
 }
@@ -22,17 +21,30 @@ type Season struct {
 	Episodes []Episode
 }
 
-func GetEpisodesFromId(token string, baseurl string, seriesId string) ([]Episode, error) {
-	requestUrl := fmt.Sprintf("%s/Shows/%s/Episodes", baseurl, seriesId)
+type Series struct {
+	Name    string
+	Id      string
+	Seasons []Season
+}
+
+func GetSeriesFromItem(token string, baseurl string, item *Item) (*Series, error) {
+	requestUrl := fmt.Sprintf("%s/Shows/%s/Episodes", baseurl, item.Id)
 
 	res, err := MakeRequest(token, requestUrl, "GET", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	items := res["Items"].([]any)
-	var result []Episode
+	var result Series = Series{
+		Id:   item.Id,
+		Name: item.Name,
+	}
 
+	items := res["Items"].([]any)
+
+	var seasons []Season
+
+	var currentSeason Season
 	for _, item := range items {
 
 		// Check if media container arg is passed. If not, print a warning that this media
@@ -42,55 +54,84 @@ func GetEpisodesFromId(token string, baseurl string, seriesId string) ([]Episode
 			continue
 		}
 
+		seasonId := item.(map[string]any)["SeasonId"].(string)
+		if currentSeason.Id == "" || currentSeason.Id != seasonId {
+			season := Season{
+				Id:   seasonId,
+				Name: item.(map[string]any)["SeasonName"].(string),
+			}
+
+			if currentSeason.Id != "" {
+				seasons = append(seasons, currentSeason)
+			}
+
+			currentSeason = season
+		}
+
 		ep := Episode{
-			SeriesName:   item.(map[string]any)["SeriesName"].(string),
 			Name:         item.(map[string]any)["Name"].(string),
 			Id:           item.(map[string]any)["Id"].(string),
-			SeasonId:     item.(map[string]any)["SeasonId"].(string),
-			SeasonName:   item.(map[string]any)["SeasonName"].(string),
 			Container:    item.(map[string]any)["Container"].(string),
 			DownloadLink: ""}
 
 		ep.DownloadLink = GetDownloadLinkForId(baseurl, token, ep.Id)
-		result = append(result, ep)
+		currentSeason.Episodes = append(currentSeason.Episodes, ep)
 	}
 
-	return result, nil
+	result.Seasons = seasons
+
+	return &result, nil
 }
 
-func FilterEpisodesForSeason(episodes []Episode, seasonId string) []Episode {
-	var episodesForSeason []Episode
-
-	for _, episode := range episodes {
-		if episode.SeasonId == seasonId {
-			episodesForSeason = append(episodesForSeason, episode)
+func (series *Series) GetSeasonForId(seasonId string) (*Season, error) {
+	for _, season := range series.Seasons {
+		if season.Id == seasonId {
+			return &season, nil
 		}
 	}
 
-	return episodesForSeason
+	return nil, errors.New(fmt.Sprint("No Season found for id %s", seasonId))
 }
 
-// TODO: Assume that episodes are unordered
-func OrderSeasonsByEpisodes(episodes []Episode) []Season {
-	var seasons []Season
+func (series *Series) PrintAndGetSelection() ([]Season, error) {
+	fmt.Println("Which Seasons do you want to download:")
 
-	var lastEp Episode
-	for _, episode := range episodes {
-
-		seasonIsNew := lastEp.SeasonId != "" && lastEp.SeasonId != episode.SeasonId
-		if len(seasons) == 0 || seasonIsNew {
-			newSeason := Season{
-				Id:       episode.SeasonId,
-				Name:     episode.SeasonName,
-				Episodes: append(make([]Episode, 1), episode)}
-
-			seasons = append(seasons, newSeason)
-		} else {
-			seasons[len(seasons)-1].Episodes = append(seasons[len(seasons)-1].Episodes, episode)
-		}
-
-		lastEp = episode
+	color.Cyan("  0. All")
+	for idx, season := range series.Seasons {
+		color.Cyan("  %d. %s", idx+1, season.Name)
 	}
 
-	return seasons
+	choice, err := GetUserChoice(len(series.Seasons))
+	if err != nil {
+		return nil, errors.New("Only provide a single number")
+	}
+
+	if choice == 0 {
+		return series.Seasons, nil
+	} else {
+		return []Season{series.Seasons[choice]}, nil
+	}
+
+}
+
+func (series *Series) PrintAndGetConfirmation(seasonsToDownload []Season) bool {
+	fmt.Println("The following Episodes will be downloaded:")
+	color.Green(series.Name)
+
+	for season_index, season := range seasonsToDownload {
+		color.Cyan("  └ %d. %s", season_index+1, season.Name)
+		for episode_index, episode := range season.Episodes {
+			color.Cyan("    └ %d. %s", episode_index+1, episode.Name)
+		}
+	}
+
+	return GetConfirmation()
+}
+
+func (season *Season) Download() {
+	for idx, episode := range season.Episodes {
+		suffix := strings.Split(episode.Container, ",")[0]
+		outfilename := fmt.Sprintf("%s_%s.%s", season.Name, episode.Name, suffix)
+		DownloadFromUrl(episode.DownloadLink, episode.Name, outfilename, len(season.Episodes), idx)
+	}
 }
