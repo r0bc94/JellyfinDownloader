@@ -19,7 +19,7 @@ func CreatePBar(length int64, description string) *progressbar.ProgressBar {
 		progressbar.OptionSetWriter(os.Stderr),
 		progressbar.OptionShowBytes(true),
 		progressbar.OptionSetWidth(10),
-		progressbar.OptionThrottle(65*time.Millisecond),
+		progressbar.OptionThrottle(1*time.Second),
 		progressbar.OptionShowCount(),
 		progressbar.OptionOnCompletion(func() {
 			fmt.Fprint(os.Stderr, "\n")
