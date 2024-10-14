@@ -109,7 +109,7 @@ func (series *Series) PrintAndGetSelection() ([]Season, error) {
 	if choice == 0 {
 		return series.Seasons, nil
 	} else {
-		return []Season{series.Seasons[choice]}, nil
+		return []Season{series.Seasons[choice-1]}, nil
 	}
 
 }
