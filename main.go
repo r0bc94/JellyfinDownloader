@@ -63,6 +63,9 @@ func CheckArguments(args *Arguments) (bool, string) {
 		return false, "URL was supplied in the wrong pattern. The URL must be supplied like so: http(s)://myserver(:123)(/). Instead of the whole hostname, you can also specify the IPv4 address which is pointing to your Jellyfin server."
 	}
 
+	// Remove a leading / if it was provided
+	args.BaseUrl = strings.TrimSuffix(args.BaseUrl, "/")
+
 	if args.SeriesId == "" && args.Name == "" {
 		return false, "No SeriesID or Name was given. See -h for more information."
 	}
