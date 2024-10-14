@@ -5,13 +5,16 @@ import (
 	"flag"
 	"fmt"
 	"jf_requests/jf_requests"
+	"log/slog"
 	"os"
 	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/fatih/color"
+	"github.com/lmittmann/tint"
 	"golang.org/x/term"
 )
 
@@ -25,6 +28,7 @@ type Arguments struct {
 	SeasonId string
 	Name     string
 	Version  bool
+	Debug    bool
 }
 
 // Parses the command line arguments and returns a struct containing all found arguments.
@@ -38,6 +42,7 @@ func ParseCLIArgs() *Arguments {
 	flag.StringVar(&args.Password, "password", "", "Passwort for the Jellyfin instance. If not provided, username will be prompted.")
 	flag.StringVar(&args.Name, "name", "", "Name of the Show or Movie you want to download.")
 	flag.BoolVar(&args.Version, "version", false, "Shows the Version Informations and Exit")
+	flag.BoolVar(&args.Debug, "debug", false, "Show verbose debug output which may be useful to find certain problems")
 
 	flag.Parse()
 
@@ -220,8 +225,24 @@ func ShowVersionInfo() {
 	fmt.Printf("JellyfinDownloader Version: %s\n", VERSION)
 }
 
+func getLogLevel(args *Arguments) slog.Level {
+	if args.Debug {
+		return slog.LevelDebug
+	} else {
+		return slog.LevelInfo
+	}
+}
+
 func main() {
 	args := ParseCLIArgs()
+
+	// Configure Logger
+	slog.SetDefault(slog.New(
+		tint.NewHandler(os.Stdout, &tint.Options{
+			Level:      getLogLevel(args),
+			TimeFormat: time.Kitchen,
+		}),
+	))
 
 	if args.Version {
 		ShowVersionInfo()
@@ -238,8 +259,7 @@ func main() {
 
 	creds, err := jf_requests.Authorize(args.BaseUrl, username, password)
 	if err != nil {
-		color.Red("Authentication Failed!\n")
-		color.Red("%s\n", err)
+		color.Red("Authentication Failed! Did you enter the correct credentials?")
 		os.Exit(1)
 	}
 
