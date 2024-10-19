@@ -50,7 +50,6 @@ func ParseCLIArgs() *Arguments {
 }
 
 // Checks, if all necessarry cli arguments are passed.
-// Checks, if all necessarry cli arguments are passed.
 func CheckArguments(args *Arguments) (bool, string) {
 	if args.BaseUrl == "" {
 		return false, "No URL was given. See -h for more information"
@@ -158,7 +157,7 @@ func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_req
 
 	if confirm {
 		for _, season := range selected_seasons {
-			season.Download()
+			season.Download(baseurl, auth.Token)
 		}
 	}
 

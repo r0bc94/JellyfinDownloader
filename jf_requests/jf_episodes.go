@@ -9,10 +9,9 @@ import (
 )
 
 type Episode struct {
-	Name         string
-	Id           string
-	Container    string
-	DownloadLink string
+	Name      string
+	Id        string
+	Container string
 }
 
 type Season struct {
@@ -43,43 +42,48 @@ func GetSeriesFromItem(token string, baseurl string, item *Item) (*Series, error
 	items := res["Items"].([]any)
 
 	var seasons []Season
-
-	var currentSeason Season
-	for _, item := range items {
-
-		// Check if media container arg is passed. If not, print a warning that this media
-		// might be missing or corrupted.
-		if item.(map[string]any)["Container"] == nil {
-			color.Yellow("Could not get container format for episode \"%s\"; Might be missing or corrupted!", item.(map[string]any)["Name"].(string))
-			continue
+	var currentSeason *Season
+	var seasonId string
+	var lastSeasonId string
+	for index := 0; index < len(items); index += 1 {
+		if index+1 < len(items) {
+			seasonId = items[index+1].(map[string]any)["SeasonId"].(string)
 		}
 
-		seasonId := item.(map[string]any)["SeasonId"].(string)
-		if currentSeason.Id == "" || currentSeason.Id != seasonId {
-			season := Season{
+		// Create Initial Season
+		if index == 0 {
+			currentSeason = &Season{
 				Id:   seasonId,
-				Name: item.(map[string]any)["SeasonName"].(string),
+				Name: items[index].(map[string]any)["SeasonName"].(string),
 			}
 
-			if currentSeason.Id != "" {
-				seasons = append(seasons, currentSeason)
-			}
-
-			currentSeason = season
+			lastSeasonId = seasonId
 		}
 
 		ep := Episode{
-			Name:         item.(map[string]any)["Name"].(string),
-			Id:           item.(map[string]any)["Id"].(string),
-			Container:    item.(map[string]any)["Container"].(string),
-			DownloadLink: ""}
+			Name:      items[index].(map[string]any)["Name"].(string),
+			Id:        items[index].(map[string]any)["Id"].(string),
+			Container: items[index].(map[string]any)["Container"].(string)}
 
-		ep.DownloadLink = GetDownloadLinkForId(baseurl, token, ep.Id)
 		currentSeason.Episodes = append(currentSeason.Episodes, ep)
+
+		if seasonId != lastSeasonId {
+			seasons = append(seasons, *currentSeason)
+			currentSeason = &Season{
+				Id:   seasonId,
+				Name: items[index+1].(map[string]any)["SeasonName"].(string),
+			}
+
+			lastSeasonId = seasonId
+		}
+
+		if index+1 == len(items) {
+			seasons = append(seasons, *currentSeason)
+			break
+		}
 	}
 
 	result.Seasons = seasons
-
 	return &result, nil
 }
 
@@ -128,10 +132,11 @@ func (series *Series) PrintAndGetConfirmation(seasonsToDownload []Season) bool {
 	return GetConfirmation()
 }
 
-func (season *Season) Download() {
+func (season *Season) Download(baseUrl string, token string) {
 	for idx, episode := range season.Episodes {
 		suffix := strings.Split(episode.Container, ",")[0]
 		outfilename := fmt.Sprintf("%s_%s.%s", season.Name, episode.Name, suffix)
-		DownloadFromUrl(episode.DownloadLink, episode.Name, outfilename, len(season.Episodes), idx)
+		downloadLink := GetDownloadLinkForId(baseUrl, token, episode.Id)
+		DownloadFromUrl(downloadLink, episode.Name, outfilename, len(season.Episodes), idx)
 	}
 }
