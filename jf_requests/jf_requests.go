@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
+	"strings"
 )
 
 type AuthRequestBody struct {
@@ -21,6 +23,23 @@ type AuthResponse struct {
 }
 
 func ExecuteRequest(request *http.Request) (map[string]any, error) {
+	// Hide Authentication Request Log Output
+	if strings.Contains(request.URL.Path, "AuthenticateByName") {
+		slog.Debug("**AuthenticateByName request hidden**")
+	} else {
+		// Hide Authorization Header which would otherwise leak the auth token.
+		// In order to keep the original token in the referenced header in tact, we need to copy the
+		// dictionary.
+		headerForPrinting := make(map[string][]string)
+		for key, value := range request.Header {
+			headerForPrinting[key] = make([]string, 1)
+			copy(headerForPrinting[key], value)
+		}
+
+		headerForPrinting["X-Emby-Authorization"][0] = "*****"
+		slog.Debug(fmt.Sprintf("Executing Request against: %s", request.URL), "method", request.Method, "header", headerForPrinting, "body", request.Body)
+	}
+
 	client := &http.Client{}
 	res, err := client.Do(request)
 
@@ -36,6 +55,7 @@ func ExecuteRequest(request *http.Request) (map[string]any, error) {
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Could not read response body: %s", err))
 	} else if res.StatusCode != 200 {
+		slog.Debug(fmt.Sprintf("Request to %s returned a non 200 response code", request.RequestURI), "code", res.StatusCode, "response", string(content_raw[:]))
 		return nil, errors.New(fmt.Sprintf("Request Failed (Code %d): %s", res.StatusCode, content_raw))
 	}
 
@@ -43,6 +63,13 @@ func ExecuteRequest(request *http.Request) (map[string]any, error) {
 	err = json.Unmarshal(content_raw, &content_json)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Failed to Parse JSON from Response: %s", err))
+	}
+
+	// Hide Authentication Response Log Output
+	if strings.Contains(request.URL.Path, "AuthenticateByName") {
+		slog.Debug("**AuthenticateByName response hidden**")
+	} else {
+		slog.Debug("request result", "url", request.URL, "response header", res.Header, "body", string(content_raw[:]))
 	}
 
 	return content_json, nil

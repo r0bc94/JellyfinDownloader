@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
@@ -30,7 +31,7 @@ func GetUserChoice(number_of_choices int) (int, error) {
 
 		return selection, nil
 	} else {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return -1, errors.New("Only provide a single number")
 	}
 }
