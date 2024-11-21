@@ -77,7 +77,7 @@ func GetSeriesFromItem(token string, baseurl string, item *Item) (*Series, error
 		ep.DownloadLink = GetDownloadLinkForId(baseurl, token, ep.Id)
 		currentSeason.Episodes = append(currentSeason.Episodes, ep)
 	}
-
+    seasons = append(seasons, currentSeason)
 	result.Seasons = seasons
 
 	return &result, nil
@@ -109,7 +109,7 @@ func (series *Series) PrintAndGetSelection() ([]Season, error) {
 	if choice == 0 {
 		return series.Seasons, nil
 	} else {
-		return []Season{series.Seasons[choice]}, nil
+		return []Season{series.Seasons[choice-1]}, nil
 	}
 
 }
@@ -131,7 +131,8 @@ func (series *Series) PrintAndGetConfirmation(seasonsToDownload []Season) bool {
 func (season *Season) Download() {
 	for idx, episode := range season.Episodes {
 		suffix := strings.Split(episode.Container, ",")[0]
-		outfilename := fmt.Sprintf("%s_%s.%s", season.Name, episode.Name, suffix)
+		seasonid := strings.Split(season.Name, " ")
+		outfilename := fmt.Sprintf("S%sE%d %s.%s", seasonid[len(seasonid)-1], int(idx)+1, episode.Name, suffix)
 		DownloadFromUrl(episode.DownloadLink, episode.Name, outfilename, len(season.Episodes), idx)
 	}
 }
