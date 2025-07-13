@@ -135,7 +135,8 @@ func (series *Series) PrintAndGetConfirmation(seasonsToDownload []Season) bool {
 func (season *Season) Download(baseUrl string, token string) {
 	for idx, episode := range season.Episodes {
 		suffix := strings.Split(episode.Container, ",")[0]
-		outfilename := fmt.Sprintf("%s_%s.%s", season.Name, episode.Name, suffix)
+		seasonid := strings.Split(season.Name, " ")
+		outfilename := fmt.Sprintf("S%sE%d %s.%s", seasonid[len(seasonid)-1], int(idx)+1, episode.Name, suffix)
 		downloadLink := GetDownloadLinkForId(baseUrl, token, episode.Id)
 		DownloadFromUrl(downloadLink, episode.Name, outfilename, len(season.Episodes), idx)
 	}
