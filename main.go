@@ -201,15 +201,18 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 			return false
 		}
 
+		var item *jf_requests.Item
 		if len(items) == 0 {
 			color.Yellow("Did not found anything for the given Searchterm on the Server.")
 			return false
-		}
-
-		item, err := PrintItemSelection(items)
-		if err != nil {
-			color.Red(err.Error())
-			return false
+		} else if len(items) == 1 {
+			item = &items[0]
+		} else {
+			item, err = PrintItemSelection(items)
+			if err != nil {
+				color.Red(err.Error())
+				return false
+			}
 		}
 
 		if item.Type == "Series" {
