@@ -136,6 +136,7 @@ func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_req
 		return false
 	}
 
+	color.Green("Series: %s\n", item.Name)
 	var selected_seasons []jf_requests.Season
 	if seasonId != "" {
 		if selected_season, geterr := series.GetSeasonForId(seasonId); geterr == nil {
