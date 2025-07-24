@@ -98,7 +98,7 @@ func (series *Series) GetSeasonForId(seasonId string) (*Season, error) {
 }
 
 func (series *Series) PrintAndGetSelection() ([]Season, error) {
-	fmt.Println("Which Seasons do you want to download:")
+	fmt.Println("Which Season do you want to download:")
 
 	color.Cyan("  0. All")
 	for idx, season := range series.Seasons {
