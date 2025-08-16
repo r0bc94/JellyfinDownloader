@@ -27,12 +27,12 @@ func GetUserChoice(number_of_choices int) (int, error) {
 	response = strings.Split(unified_response_string, "\n")[0]
 	if selection, err := strconv.Atoi(response); err == nil {
 		if selection < 0 || selection > number_of_choices {
-			return -1, errors.New("Invalid Selection")
+			return -1, errors.New("invalid selection")
 		}
 
 		return selection, nil
 	} else {
 		slog.Error(err.Error())
-		return -1, errors.New("Only provide a single number")
+		return -1, errors.New("only provide a single number")
 	}
 }
