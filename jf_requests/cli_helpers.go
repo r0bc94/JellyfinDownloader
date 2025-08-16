@@ -23,7 +23,7 @@ func GetUserChoice(number_of_choices int) (int, error) {
 	fmt.Print("==> ")
 	reader := bufio.NewReader(os.Stdin)
 	response, _ := reader.ReadString('\n')
-	unified_response_string := strings.Replace(response, "\r\n", "\n", -1)
+	unified_response_string := strings.Replace(response, "\r\n", "", -1)
 	response = strings.Split(unified_response_string, "\n")[0]
 	if selection, err := strconv.Atoi(response); err == nil {
 		if selection < 0 || selection > number_of_choices {
