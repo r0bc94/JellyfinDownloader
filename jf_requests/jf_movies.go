@@ -1,7 +1,6 @@
 package jf_requests
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -25,14 +24,14 @@ func GetMovieFromItem(auth *AuthResponse, baseurl string, item *Item) (*Movie, e
 
 	// Check if media container arg is passed. If not, print a warning that this media
 	// might be missing or corrupted.
-	if res["Container"] == nil {
-		return nil, errors.New(fmt.Sprintf("Could not get container format for requested movie; Might be missing or corrupted!"))
+	if res["MediaSources"] == nil || len(res["MediaSources"].([]any)) == 0 {
+		return nil, fmt.Errorf("no media sources for the given movie found")
 	}
 
 	mov := Movie{
 		Name:         res["Name"].(string),
 		Id:           res["Id"].(string),
-		Container:    res["Container"].(string),
+		Container:    res["MediaSources"].([]any)[0].(map[string]any)["container"].(string),
 		DownloadLink: ""}
 
 	mov.DownloadLink = GetDownloadLinkForId(baseurl, auth.Token, mov.Id)
