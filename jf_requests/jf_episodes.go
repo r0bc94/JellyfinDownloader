@@ -141,7 +141,7 @@ func (series *Series) PrintAndGetConfirmation(seasonsToDownload []Season) bool {
 	}
 
 	if undownloadbleItemsPresent {
-		color.Yellow("Some items cannot be downloaded due to missing permissions!")
+		color.Yellow("Some items cannot be downloaded due to insufficient permission!")
 		color.Yellow("The affected Items are struck through.")
 	}
 
