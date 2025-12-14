@@ -3,6 +3,7 @@ package jf_requests
 import (
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/fatih/color"
@@ -12,6 +13,7 @@ type Episode struct {
 	Name        string
 	Id          string
 	Container   string
+	Filename    string
 	CanDownload bool
 }
 
@@ -28,7 +30,7 @@ type Series struct {
 }
 
 func GetSeriesFromItem(token string, baseurl string, item *Item) (*Series, error) {
-	requestUrl := fmt.Sprintf("%s/Shows/%s/Episodes?fields=candownload", baseurl, item.Id)
+	requestUrl := fmt.Sprintf("%s/Shows/%s/Episodes?fields=candownload,path", baseurl, item.Id)
 
 	res, err := MakeRequest(token, requestUrl, "GET", nil)
 	if err != nil {
@@ -67,6 +69,16 @@ func GetSeriesFromItem(token string, baseurl string, item *Item) (*Series, error
 			Container:   items[index].(map[string]any)["Container"].(string),
 			CanDownload: items[index].(map[string]any)["CanDownload"].(bool)}
 
+		if fullpath, pathFieldExists := items[index].(map[string]any)["Path"]; pathFieldExists {
+			fullpath, is_string := fullpath.(string)
+			if is_string {
+				filename := path.Base(fullpath)
+				ep.Filename = filename
+			}
+		} else {
+			color.Yellow("Did not found a filename for episode: %s", ep.Name)
+		}
+
 		currentSeason.Episodes = append(currentSeason.Episodes, ep)
 
 		if seasonId != lastSeasonId {
@@ -96,7 +108,7 @@ func (series *Series) GetSeasonForId(seasonId string) (*Season, error) {
 		}
 	}
 
-	return nil, errors.New(fmt.Sprint("No Season found for id %s", seasonId))
+	return nil, fmt.Errorf("no season found for id: %s", seasonId)
 }
 
 func (series *Series) PrintAndGetSelection() ([]Season, error) {
@@ -148,12 +160,18 @@ func (series *Series) PrintAndGetConfirmation(seasonsToDownload []Season) bool {
 	return GetConfirmation()
 }
 
-func (season *Season) Download(baseUrl string, token string) {
+func (season *Season) Download(baseUrl string, token string, keepFilenames bool) {
 	for idx, episode := range season.Episodes {
 		if episode.CanDownload {
-			suffix := strings.Split(episode.Container, ",")[0]
-			seasonid := strings.Split(season.Name, " ")
-			outfilename := fmt.Sprintf("S%sE%d %s.%s", seasonid[len(seasonid)-1], int(idx)+1, episode.Name, suffix)
+			var outfilename string
+			if keepFilenames {
+				outfilename = episode.Filename
+			} else {
+				suffix := strings.Split(episode.Container, ",")[0]
+				seasonid := strings.Split(season.Name, " ")
+				outfilename = fmt.Sprintf("S%sE%d %s.%s", seasonid[len(seasonid)-1], int(idx)+1, episode.Name, suffix)
+			}
+
 			downloadLink := GetDownloadLinkForId(baseUrl, token, episode.Id)
 			DownloadFromUrl(downloadLink, episode.Name, outfilename, len(season.Episodes), idx)
 		} else {
