@@ -3,6 +3,7 @@ package jf_requests
 import (
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/fatih/color"
@@ -12,6 +13,8 @@ type Movie struct {
 	Name         string
 	Id           string
 	Container    string
+	Path         string
+	CanDownload  bool
 	DownloadLink string
 }
 
@@ -33,6 +36,8 @@ func GetMovieFromItem(auth *AuthResponse, baseurl string, item *Item) (*Movie, e
 		Name:         res["Name"].(string),
 		Id:           res["Id"].(string),
 		Container:    res["Container"].(string),
+		CanDownload:  res["CanDownload"].(bool),
+		Path:         res["Path"].(string),
 		DownloadLink: ""}
 
 	mov.DownloadLink = GetDownloadLinkForId(baseurl, auth.Token, mov.Id)
@@ -41,14 +46,26 @@ func GetMovieFromItem(auth *AuthResponse, baseurl string, item *Item) (*Movie, e
 }
 
 func (movie *Movie) PrintAndGetConfirmation() bool {
-	fmt.Println("The following Movie will be downloaded:")
-	color.Green("Name: %s", movie.Name)
+	if movie.CanDownload {
+		fmt.Println("The following Movie will be downloaded:")
+		color.Green("Name: %s", movie.Name)
 
-	return GetConfirmation()
+		return GetConfirmation()
+	} else {
+		color.Yellow("Cannot download the Move \"%s\" due to insufficient permission!", movie.Name)
+		return false
+	}
 }
 
-func (movie *Movie) Download() {
-	suffix := strings.Split(movie.Container, ",")[0]
-	outfilename := fmt.Sprintf("%s_%s.%s", movie.Name, movie.Name, suffix)
+func (movie *Movie) Download(keepFilename bool) {
+	var outfilename string
+	if keepFilename {
+		basename := path.Base(movie.Path)
+		outfilename = basename
+	} else {
+		suffix := strings.Split(movie.Container, ",")[0]
+		outfilename = fmt.Sprintf("%s_%s.%s", movie.Name, movie.Name, suffix)
+	}
+
 	DownloadFromUrl(movie.DownloadLink, movie.Name, outfilename, 1, 0)
 }

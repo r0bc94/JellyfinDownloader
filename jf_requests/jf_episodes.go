@@ -3,15 +3,18 @@ package jf_requests
 import (
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/fatih/color"
 )
 
 type Episode struct {
-	Name      string
-	Id        string
-	Container string
+	Name        string
+	Id          string
+	Container   string
+	Filename    string
+	CanDownload bool
 }
 
 type Season struct {
@@ -27,7 +30,7 @@ type Series struct {
 }
 
 func GetSeriesFromItem(token string, baseurl string, item *Item) (*Series, error) {
-	requestUrl := fmt.Sprintf("%s/Shows/%s/Episodes", baseurl, item.Id)
+	requestUrl := fmt.Sprintf("%s/Shows/%s/Episodes?fields=candownload,path", baseurl, item.Id)
 
 	res, err := MakeRequest(token, requestUrl, "GET", nil)
 	if err != nil {
@@ -61,9 +64,20 @@ func GetSeriesFromItem(token string, baseurl string, item *Item) (*Series, error
 		}
 
 		ep := Episode{
-			Name:      items[index].(map[string]any)["Name"].(string),
-			Id:        items[index].(map[string]any)["Id"].(string),
-			Container: items[index].(map[string]any)["Container"].(string)}
+			Name:        items[index].(map[string]any)["Name"].(string),
+			Id:          items[index].(map[string]any)["Id"].(string),
+			Container:   items[index].(map[string]any)["Container"].(string),
+			CanDownload: items[index].(map[string]any)["CanDownload"].(bool)}
+
+		if fullpath, pathFieldExists := items[index].(map[string]any)["Path"]; pathFieldExists {
+			fullpath, is_string := fullpath.(string)
+			if is_string {
+				filename := path.Base(fullpath)
+				ep.Filename = filename
+			}
+		} else {
+			color.Yellow("Did not found a filename for episode: %s", ep.Name)
+		}
 
 		currentSeason.Episodes = append(currentSeason.Episodes, ep)
 
@@ -94,7 +108,7 @@ func (series *Series) GetSeasonForId(seasonId string) (*Season, error) {
 		}
 	}
 
-	return nil, errors.New(fmt.Sprint("No Season found for id %s", seasonId))
+	return nil, fmt.Errorf("no season found for id: %s", seasonId)
 }
 
 func (series *Series) PrintAndGetSelection() ([]Season, error) {
@@ -121,23 +135,47 @@ func (series *Series) PrintAndGetSelection() ([]Season, error) {
 func (series *Series) PrintAndGetConfirmation(seasonsToDownload []Season) bool {
 	fmt.Println("The following Episodes will be downloaded:")
 	color.Green(series.Name)
+	undownloadbleItemsPresent := false
 
 	for season_index, season := range seasonsToDownload {
 		color.Cyan("  └ %d. %s", season_index+1, season.Name)
 		for episode_index, episode := range season.Episodes {
-			color.Cyan("    └ %d. %s", episode_index+1, episode.Name)
+			outstring := fmt.Sprintf("    └ %d. %s", episode_index+1, episode.Name)
+
+			// Strike out episodes which can not be downloaded from the Jellyfin server due to the CanDownload attribute
+			// set to false
+			if !episode.CanDownload {
+				outstring = fmt.Sprintf("\033[9m%s\033[0m", outstring)
+				undownloadbleItemsPresent = true
+			}
+			color.Cyan(outstring)
 		}
+	}
+
+	if undownloadbleItemsPresent {
+		color.Yellow("Some items cannot be downloaded due to insufficient permission!")
+		color.Yellow("The affected Items are struck through.")
 	}
 
 	return GetConfirmation()
 }
 
-func (season *Season) Download(baseUrl string, token string) {
+func (season *Season) Download(baseUrl string, token string, keepFilenames bool) {
 	for idx, episode := range season.Episodes {
-		suffix := strings.Split(episode.Container, ",")[0]
-		seasonid := strings.Split(season.Name, " ")
-		outfilename := fmt.Sprintf("S%sE%d %s.%s", seasonid[len(seasonid)-1], int(idx)+1, episode.Name, suffix)
-		downloadLink := GetDownloadLinkForId(baseUrl, token, episode.Id)
-		DownloadFromUrl(downloadLink, episode.Name, outfilename, len(season.Episodes), idx)
+		if episode.CanDownload {
+			var outfilename string
+			if keepFilenames {
+				outfilename = episode.Filename
+			} else {
+				suffix := strings.Split(episode.Container, ",")[0]
+				seasonid := strings.Split(season.Name, " ")
+				outfilename = fmt.Sprintf("S%sE%d %s.%s", seasonid[len(seasonid)-1], int(idx)+1, episode.Name, suffix)
+			}
+
+			downloadLink := GetDownloadLinkForId(baseUrl, token, episode.Id)
+			DownloadFromUrl(downloadLink, episode.Name, outfilename, len(season.Episodes), idx)
+		} else {
+			color.Yellow("Skipping non downloadable item: %s", episode.Name)
+		}
 	}
 }
