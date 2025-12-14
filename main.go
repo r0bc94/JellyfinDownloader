@@ -18,17 +18,18 @@ import (
 	"golang.org/x/term"
 )
 
-const VERSION string = "v1.3.1"
+const VERSION string = "v1.3.2-prerelease-01"
 
 type Arguments struct {
-	BaseUrl  string
-	Username string
-	Password string
-	SeriesId string
-	SeasonId string
-	Name     string
-	Version  bool
-	Debug    bool
+	BaseUrl       string
+	Username      string
+	Password      string
+	SeriesId      string
+	SeasonId      string
+	Name          string
+	KeepFilenames bool
+	Version       bool
+	Debug         bool
 }
 
 // Parses the command line arguments and returns a struct containing all found arguments.
@@ -41,6 +42,7 @@ func ParseCLIArgs() *Arguments {
 	flag.StringVar(&args.Username, "username", "", "Username used to login to the Jellyfin instance. If not provided, password will be prompted.")
 	flag.StringVar(&args.Password, "password", "", "Passwort for the Jellyfin instance. If not provided, username will be prompted.")
 	flag.StringVar(&args.Name, "name", "", "Name of the Show or Movie you want to download.")
+	flag.BoolVar(&args.KeepFilenames, "keepFilenames", false, "Keeps the original episode filenames for series.")
 	flag.BoolVar(&args.Version, "version", false, "Shows the Version Informations and Exit")
 	flag.BoolVar(&args.Debug, "debug", false, "Show verbose debug output which may be useful to find certain problems")
 
@@ -129,7 +131,7 @@ func PrintItemSelection(itemsToSelect []jf_requests.Item) (*jf_requests.Item, er
 	return &itemsToSelect[choice-1], nil
 }
 
-func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_requests.Item, seasonId string) bool {
+func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_requests.Item, seasonId string, keepFilenames bool) bool {
 	series, err := jf_requests.GetSeriesFromItem(auth.Token, baseurl, item)
 	if err != nil {
 		color.Red("Failed to obtain Episode Information for given id: %s", err)
@@ -158,7 +160,7 @@ func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_req
 
 	if confirm {
 		for _, season := range selected_seasons {
-			season.Download(baseurl, auth.Token)
+			season.Download(baseurl, auth.Token, keepFilenames)
 		}
 	}
 
@@ -190,7 +192,7 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 		}
 
 		if item.Type == "Series" {
-			return DownloadSeries(auth, args.BaseUrl, item, args.SeasonId)
+			return DownloadSeries(auth, args.BaseUrl, item, args.SeasonId, args.KeepFilenames)
 		} else {
 			return DownloadMovie(auth, args.BaseUrl, item)
 		}
@@ -217,7 +219,7 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 		}
 
 		if item.Type == "Series" {
-			return DownloadSeries(auth, args.BaseUrl, item, "")
+			return DownloadSeries(auth, args.BaseUrl, item, args.SeasonId, args.KeepFilenames)
 		} else {
 			return DownloadMovie(auth, args.BaseUrl, item)
 		}
