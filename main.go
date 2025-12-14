@@ -18,7 +18,7 @@ import (
 	"golang.org/x/term"
 )
 
-const VERSION string = "v1.3.2-prerelease-01"
+const VERSION string = "v1.4.0"
 
 type Arguments struct {
 	BaseUrl       string
@@ -167,7 +167,7 @@ func DownloadSeries(auth *jf_requests.AuthResponse, baseurl string, item *jf_req
 	return true
 }
 
-func DownloadMovie(auth *jf_requests.AuthResponse, baseurl string, item *jf_requests.Item) bool {
+func DownloadMovie(auth *jf_requests.AuthResponse, baseurl string, item *jf_requests.Item, keepFilename bool) bool {
 	movie, err := jf_requests.GetMovieFromItem(auth, baseurl, item)
 	if err != nil {
 		color.Red("Failed to obtain Movie for given id: %s", err)
@@ -175,7 +175,7 @@ func DownloadMovie(auth *jf_requests.AuthResponse, baseurl string, item *jf_requ
 	}
 
 	if movie.PrintAndGetConfirmation() {
-		movie.Download()
+		movie.Download(keepFilename)
 	} else {
 		return false
 	}
@@ -194,7 +194,7 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 		if item.Type == "Series" {
 			return DownloadSeries(auth, args.BaseUrl, item, args.SeasonId, args.KeepFilenames)
 		} else {
-			return DownloadMovie(auth, args.BaseUrl, item)
+			return DownloadMovie(auth, args.BaseUrl, item, args.KeepFilenames)
 		}
 
 	} else if args.Name != "" {
@@ -221,7 +221,7 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 		if item.Type == "Series" {
 			return DownloadSeries(auth, args.BaseUrl, item, args.SeasonId, args.KeepFilenames)
 		} else {
-			return DownloadMovie(auth, args.BaseUrl, item)
+			return DownloadMovie(auth, args.BaseUrl, item, args.KeepFilenames)
 		}
 
 	}
