@@ -18,7 +18,7 @@ import (
 	"golang.org/x/term"
 )
 
-const VERSION string = "v1.4.0-prerelease-1"
+const VERSION string = "v1.4.0"
 
 type Arguments struct {
 	BaseUrl       string
@@ -42,7 +42,7 @@ func ParseCLIArgs() *Arguments {
 	flag.StringVar(&args.Username, "username", "", "Username used to login to the Jellyfin instance. If not provided, password will be prompted.")
 	flag.StringVar(&args.Password, "password", "", "Passwort for the Jellyfin instance. If not provided, username will be prompted.")
 	flag.StringVar(&args.Name, "name", "", "Name of the Show or Movie you want to download.")
-	flag.BoolVar(&args.KeepFilenames, "keepFilenames", false, "Keeps the original episode filenames for series.")
+	flag.BoolVar(&args.KeepFilenames, "keepFilenames", false, "Keeps the original filenames.")
 	flag.BoolVar(&args.Version, "version", false, "Shows the Version Informations and Exit")
 	flag.BoolVar(&args.Debug, "debug", false, "Show verbose debug output which may be useful to find certain problems")
 
