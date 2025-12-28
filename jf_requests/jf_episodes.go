@@ -12,7 +12,6 @@ import (
 type Episode struct {
 	Name        string
 	Id          string
-	Container   string
 	Filename    string
 	CanDownload bool
 }
@@ -66,7 +65,6 @@ func GetSeriesFromItem(token string, baseurl string, item *Item) (*Series, error
 		ep := Episode{
 			Name:        items[index].(map[string]any)["Name"].(string),
 			Id:          items[index].(map[string]any)["Id"].(string),
-			Container:   items[index].(map[string]any)["Container"].(string),
 			CanDownload: items[index].(map[string]any)["CanDownload"].(bool)}
 
 		if fullpath, pathFieldExists := items[index].(map[string]any)["Path"]; pathFieldExists {
@@ -76,7 +74,8 @@ func GetSeriesFromItem(token string, baseurl string, item *Item) (*Series, error
 				ep.Filename = filename
 			}
 		} else {
-			color.Yellow("Did not found a filename for episode: %s", ep.Name)
+			color.Yellow("Did not found a filename for episode: \"%s\". It will be ignored..", ep.Name)
+			continue
 		}
 
 		currentSeason.Episodes = append(currentSeason.Episodes, ep)
@@ -167,7 +166,8 @@ func (season *Season) Download(baseUrl string, token string, keepFilenames bool)
 			if keepFilenames {
 				outfilename = episode.Filename
 			} else {
-				suffix := strings.Split(episode.Container, ",")[0]
+				splittedFilename := strings.Split(episode.Filename, ".")
+				suffix := splittedFilename[len(splittedFilename)-1]
 				seasonid := strings.Split(season.Name, " ")
 				outfilename = fmt.Sprintf("S%sE%d %s.%s", seasonid[len(seasonid)-1], int(idx)+1, episode.Name, suffix)
 			}
