@@ -166,8 +166,7 @@ func (season *Season) Download(baseUrl string, token string, keepFilenames bool)
 			if keepFilenames {
 				outfilename = episode.Filename
 			} else {
-				splittedFilename := strings.Split(episode.Filename, ".")
-				suffix := splittedFilename[len(splittedFilename)-1]
+				suffix := GetSuffixFromFilename(episode.Filename)
 				seasonid := strings.Split(season.Name, " ")
 				outfilename = fmt.Sprintf("S%sE%d %s.%s", seasonid[len(seasonid)-1], int(idx)+1, episode.Name, suffix)
 			}
