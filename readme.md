@@ -59,8 +59,11 @@ jellyfindownloader \
 You can also pass additional argument such as the username or password. If those are passed, you do not need to provide them when running the script. Use `-h` for more information: 
 
 ```
-./jellyfindownloader -h
-Usage of /tmp/go-build3025870274/b001/exe/main:
+Usage of /tmp/go-build1936874542/b001/exe/main:
+  -debug
+        Show verbose debug output which may be useful to find certain problems
+  -keepFilenames
+        Keeps the original filenames.
   -name string
         Name of the Show or Movie you want to download.
   -password string
@@ -73,6 +76,8 @@ Usage of /tmp/go-build3025870274/b001/exe/main:
         Base URL which points to the Jellyfin Instance
   -username string
         Username used to login to the Jellyfin instance. If not provided, password will be prompted.
+  -version
+        Shows the Version Informations and Exit
 ```
 
 ### Environment Variables

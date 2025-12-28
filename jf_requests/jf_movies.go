@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"path"
-	"strings"
 
 	"github.com/fatih/color"
 )
@@ -12,8 +11,7 @@ import (
 type Movie struct {
 	Name         string
 	Id           string
-	Container    string
-	Path         string
+	Filename     string
 	CanDownload  bool
 	DownloadLink string
 }
@@ -35,9 +33,8 @@ func GetMovieFromItem(auth *AuthResponse, baseurl string, item *Item) (*Movie, e
 	mov := Movie{
 		Name:         res["Name"].(string),
 		Id:           res["Id"].(string),
-		Container:    res["Container"].(string),
 		CanDownload:  res["CanDownload"].(bool),
-		Path:         res["Path"].(string),
+		Filename:     path.Base(res["Path"].(string)),
 		DownloadLink: ""}
 
 	mov.DownloadLink = GetDownloadLinkForId(baseurl, auth.Token, mov.Id)
@@ -60,11 +57,11 @@ func (movie *Movie) PrintAndGetConfirmation() bool {
 func (movie *Movie) Download(keepFilename bool) {
 	var outfilename string
 	if keepFilename {
-		basename := path.Base(movie.Path)
-		outfilename = basename
+		outfilename = movie.Filename
 	} else {
-		suffix := strings.Split(movie.Container, ",")[0]
-		outfilename = fmt.Sprintf("%s_%s.%s", movie.Name, movie.Name, suffix)
+		suffix := GetSuffixFromFilename(movie.Filename)
+		fmt.Println(suffix)
+		outfilename = fmt.Sprintf("%s.%s", movie.Name, suffix)
 	}
 
 	DownloadFromUrl(movie.DownloadLink, movie.Name, outfilename, 1, 0)

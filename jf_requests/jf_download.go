@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/schollz/progressbar/v3"
@@ -56,4 +57,11 @@ func DownloadFromUrl(downloadLink string, name string, outfile string, max int, 
 
 func GetDownloadLinkForId(baseUrl string, token string, id string) string {
 	return fmt.Sprintf(baseUrl+"/Items/%s/Download?api_key=%s", id, token)
+}
+
+func GetSuffixFromFilename(filename string) string {
+	splittedFilename := strings.Split(filename, ".")
+	suffix := splittedFilename[len(splittedFilename)-1]
+
+	return suffix
 }
