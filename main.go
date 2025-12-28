@@ -18,7 +18,7 @@ import (
 	"golang.org/x/term"
 )
 
-const VERSION string = "v1.4.0-prerelease-1"
+const VERSION string = "v1.4.0"
 
 type Arguments struct {
 	BaseUrl       string
