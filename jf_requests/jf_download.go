@@ -85,7 +85,7 @@ func DownloadFromUrl(downloadLink string, name string, outfile string, max int, 
 		if resp.StatusCode == 206 {
 			flags |= os.O_APPEND
 			// Show attempt number on resume
-			fmt.Printf("[Attempt %d] Resuming '%s' from %.2f MB\n", attempt, outfile, float64(startByte)/1024/1024)
+			fmt.Printf("Resuming '%s' from %.2f MB\n", outfile, float64(startByte)/1024/1024)
 		} else {
 			startByte = 0
 		}
@@ -99,7 +99,7 @@ func DownloadFromUrl(downloadLink string, name string, outfile string, max int, 
 		// E. Start Downloading
 		bar := CreatePBar(resp.ContentLength, fmt.Sprintf("downloading %d/%d", current, max))
 		_, copyErr := io.Copy(io.MultiWriter(f, bar), resp.Body)
-		
+
 		f.Close()
 		resp.Body.Close()
 
