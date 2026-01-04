@@ -1,11 +1,11 @@
 package jf_requests
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -33,26 +33,86 @@ func CreatePBar(length int64, description string) *progressbar.ProgressBar {
 }
 
 func DownloadFromUrl(downloadLink string, name string, outfile string, max int, current int) error {
-	req, _ := http.NewRequest("GET", downloadLink, nil)
-	resp, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		return errors.New(fmt.Sprintf("Request Failed: %s", err))
+	// --- 1. Set up the 'downloads' directory (Run once) ---
+	const outputDir = "downloads"
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory: %s", err)
 	}
+	outfile = filepath.Join(outputDir, outfile)
 
-	defer resp.Body.Close()
+	// Initialize attempt counter
+	attempt := 1
 
-	f, err := os.OpenFile(outfile, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return errors.New(fmt.Sprintf("Failed to open file: %s", err))
+	// --- 2. RETRY LOOP ---
+	for {
+		// A. Check current file size
+		var startByte int64 = 0
+		if info, err := os.Stat(outfile); err == nil {
+			startByte = info.Size()
+		}
+
+		// B. Make the Request
+		req, _ := http.NewRequest("GET", downloadLink, nil)
+		if startByte > 0 {
+			req.Header.Set("Range", fmt.Sprintf("bytes=%d-", startByte))
+		}
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			fmt.Printf("\n[Attempt %d] Connection failed: %s. Retrying in 15s...\n", attempt, err)
+			attempt++
+			time.Sleep(15 * time.Second)
+			continue
+		}
+
+		// C. Handle Response Codes
+		if resp.StatusCode == 416 {
+			resp.Body.Close()
+			fmt.Printf("Skipping '%s' (Already complete)\n", outfile)
+			return nil
+		}
+
+		if resp.StatusCode != 200 && resp.StatusCode != 206 {
+			resp.Body.Close()
+			fmt.Printf("\n[Attempt %d] Server error (%d). Retrying in 15s...\n", attempt, resp.StatusCode)
+			attempt++
+			time.Sleep(15 * time.Second)
+			continue
+		}
+
+		// D. Open File
+		flags := os.O_CREATE | os.O_WRONLY
+		if resp.StatusCode == 206 {
+			flags |= os.O_APPEND
+			// Show attempt number on resume
+			fmt.Printf("Resuming '%s' from %.2f MB\n", outfile, float64(startByte)/1024/1024)
+		} else {
+			startByte = 0
+		}
+
+		f, err := os.OpenFile(outfile, flags, 0644)
+		if err != nil {
+			resp.Body.Close()
+			return fmt.Errorf("failed to open file: %s", err)
+		}
+
+		// E. Start Downloading
+		bar := CreatePBar(resp.ContentLength, fmt.Sprintf("downloading %d/%d", current, max))
+		_, copyErr := io.Copy(io.MultiWriter(f, bar), resp.Body)
+
+		f.Close()
+		resp.Body.Close()
+
+		// F. Check for Success
+		if copyErr == nil {
+			return nil // Success!
+		}
+
+		// If we are here, the stream was interrupted
+		fmt.Printf("\n[Attempt %d] Download interrupted: %s. Retrying in 15s...\n", attempt, copyErr)
+		attempt++
+		time.Sleep(15 * time.Second)
 	}
-
-	defer f.Close()
-
-	bar := CreatePBar(resp.ContentLength, fmt.Sprintf("downloading %d/%d", current, max))
-	io.Copy(io.MultiWriter(f, bar), resp.Body)
-
-	return nil
 }
 
 func GetDownloadLinkForId(baseUrl string, token string, id string) string {
