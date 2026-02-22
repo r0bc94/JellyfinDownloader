@@ -219,7 +219,7 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 		}
 
 	} else if args.Name != "" {
-		items, err := jf_requests.GetItemsForText(auth, args.BaseUrl, args.Name)
+		items, err := jf_requests.SearchItemsForText(auth, args.BaseUrl, args.Name)
 		if err != nil {
 			color.Red("Failed to obtain Episode Information for given id: %s", err)
 			return false
