@@ -18,7 +18,7 @@ import (
 	"golang.org/x/term"
 )
 
-const VERSION string = "v1.4.0"
+const VERSION string = "v1.5.0-prerelease-01"
 
 type Arguments struct {
 	BaseUrl       string
@@ -51,7 +51,7 @@ func ParseCLIArgs() *Arguments {
 	return &args
 }
 
-// Checks, if all necessarry cli arguments are passed.
+// Checks, if all necessary cli arguments are passed.
 func CheckArguments(args *Arguments) (bool, string) {
 	if args.BaseUrl == "" {
 		return false, "No URL was given. See -h for more information"
@@ -183,6 +183,22 @@ func DownloadMovie(auth *jf_requests.AuthResponse, baseurl string, item *jf_requ
 	return true
 }
 
+func DownloadAudiobooks(auth *jf_requests.AuthResponse, baseurl string, item *jf_requests.Item, keepFilenames bool) bool {
+	audiobook, err := jf_requests.GetAudioBookEpisodesFromItem(auth.Token, baseurl, item)
+	if err != nil {
+		color.Red("Failed to obtain Audiobook Episodes for given id: %s", err)
+		return false
+	}
+
+	if !audiobook.PrintAndGetConfirmation() {
+		return false
+	}
+
+	audiobook.Download(baseurl, auth.Token, keepFilenames)
+	return true
+
+}
+
 func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 	if args.SeriesId != "" {
 		item, err := jf_requests.GetItemForId(auth, args.BaseUrl, args.SeriesId)
@@ -191,10 +207,15 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 			return false
 		}
 
-		if item.Type == "Series" {
+		switch item.Type {
+		case "Series":
 			return DownloadSeries(auth, args.BaseUrl, item, args.SeasonId, args.KeepFilenames)
-		} else {
+		case "Folder":
+			return DownloadAudiobooks(auth, args.BaseUrl, item, args.KeepFilenames)
+		case "Movie":
 			return DownloadMovie(auth, args.BaseUrl, item, args.KeepFilenames)
+		default:
+			return false
 		}
 
 	} else if args.Name != "" {
@@ -218,10 +239,15 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 			}
 		}
 
-		if item.Type == "Series" {
+		switch item.Type {
+		case "Series":
 			return DownloadSeries(auth, args.BaseUrl, item, args.SeasonId, args.KeepFilenames)
-		} else {
+		case "Folder":
+			return DownloadAudiobooks(auth, args.BaseUrl, item, args.KeepFilenames)
+		case "Movie":
 			return DownloadMovie(auth, args.BaseUrl, item, args.KeepFilenames)
+		default:
+			return false
 		}
 
 	}
