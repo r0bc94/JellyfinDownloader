@@ -3,7 +3,6 @@ package jf_requests
 import (
 	"errors"
 	"fmt"
-	"path"
 	"strings"
 
 	"github.com/fatih/color"
@@ -67,15 +66,11 @@ func GetSeriesFromItem(token string, baseurl string, item *Item) (*Series, error
 			Id:          items[index].(map[string]any)["Id"].(string),
 			CanDownload: items[index].(map[string]any)["CanDownload"].(bool)}
 
-		if fullpath, pathFieldExists := items[index].(map[string]any)["Path"]; pathFieldExists {
-			fullpath, is_string := fullpath.(string)
-			if is_string {
-				filename := path.Base(fullpath)
-				ep.Filename = filename
-			}
-		} else {
+		if filename, failed := GetFilenameForResponse(items[index].(map[string]any)); failed != nil {
 			color.Yellow("Did not found a filename for episode: \"%s\". It will be ignored..", ep.Name)
 			continue
+		} else {
+			ep.Filename = filename
 		}
 
 		currentSeason.Episodes = append(currentSeason.Episodes, ep)

@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"path"
 	"strings"
 )
 
@@ -132,4 +133,21 @@ func MakeRequest(token string, requestUrl string, method string, body any) (map[
 	}
 
 	return result, nil
+}
+
+func GetFilenameForResponse(response map[string]any) (string, error) {
+	var filename string
+	if fullpath, pathFieldExists := response["Path"]; pathFieldExists {
+		fullpath, is_string := fullpath.(string)
+		if !is_string {
+			return "", fmt.Errorf("could not get path for item, path malformed")
+		}
+
+		filename = path.Base(fullpath)
+
+	} else {
+		return "", fmt.Errorf("no path field exists on object %s", response)
+	}
+
+	return filename, nil
 }
