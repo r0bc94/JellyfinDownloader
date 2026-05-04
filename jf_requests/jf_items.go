@@ -3,7 +3,7 @@ package jf_requests
 import (
 	"errors"
 	"fmt"
-	"strings"
+	"net/url"
 )
 
 type Item struct {
@@ -18,7 +18,6 @@ func GetItem(rawItems []any, parentItem *Item) []Item {
 		itm := Item{
 			Name: item.(map[string]any)["Name"].(string),
 			Id:   item.(map[string]any)["Id"].(string),
-			Type: item.(map[string]any)["Id"].(string),
 		}
 
 		if itmtype, ok := item.(map[string]any)["Type"].(string); ok {
@@ -78,24 +77,22 @@ func GetAllItems(auth *AuthResponse, baseurl string) ([]Item, error) {
 	}
 
 	return items, nil
-
 }
 
 // Returns the item whose name includes the given search term.
-func GetItemsForText(auth *AuthResponse, baseUrl string, searchtext string) ([]Item, error) {
-	all, err := GetAllItems(auth, baseUrl)
+func SearchItemsForText(auth *AuthResponse, baseurl string, searchtext string) ([]Item, error) {
+	escapedSearchterm := url.QueryEscape(searchtext)
+	requestUrl := baseurl + fmt.Sprintf("/Users/%s/Items/?recursive=true&limit=10&searchTerm=%s&includeItemTypes=Movie&includeItemTypes=Series&includeItemTypes=Folder", auth.UserId, escapedSearchterm)
+
+	res, err := MakeRequest(auth.Token, requestUrl, "GET", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var results []Item
-	for _, item := range all {
-		if strings.Contains(strings.ToLower(item.Name), strings.ToLower(searchtext)) {
-			results = append(results, item)
-		}
-	}
+	itemsRaw := res["Items"].([]any)
+	items := GetItem(itemsRaw, nil)
 
-	return results, nil
+	return items, nil
 }
 
 func GetItemForId(auth *AuthResponse, baseurl string, id string) (*Item, error) {

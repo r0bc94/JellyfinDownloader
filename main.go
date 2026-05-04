@@ -18,7 +18,7 @@ import (
 	"golang.org/x/term"
 )
 
-const VERSION string = "v1.5.0-prerelease-01"
+const VERSION string = "v1.5.0"
 
 type Arguments struct {
 	BaseUrl       string
@@ -26,6 +26,7 @@ type Arguments struct {
 	Password      string
 	SeriesId      string
 	SeasonId      string
+	CollectionId  string
 	Name          string
 	KeepFilenames bool
 	Version       bool
@@ -39,6 +40,7 @@ func ParseCLIArgs() *Arguments {
 	flag.StringVar(&args.BaseUrl, "url", "", "Base URL which points to the Jellyfin Instance")
 	flag.StringVar(&args.SeriesId, "seriesid", "", "ID which points to the series which should be downloaded")
 	flag.StringVar(&args.SeasonId, "seasonid", "", "If given, only the episodes with the provided season Id will be downloaded")
+	flag.StringVar(&args.CollectionId, "collectionid", "", "ID which points to the collection which should be downloaded. (movies only)")
 	flag.StringVar(&args.Username, "username", "", "Username used to login to the Jellyfin instance. If not provided, password will be prompted.")
 	flag.StringVar(&args.Password, "password", "", "Passwort for the Jellyfin instance. If not provided, username will be prompted.")
 	flag.StringVar(&args.Name, "name", "", "Name of the Show or Movie you want to download.")
@@ -67,8 +69,8 @@ func CheckArguments(args *Arguments) (bool, string) {
 	// Remove a leading / if it was provided
 	args.BaseUrl = strings.TrimSuffix(args.BaseUrl, "/")
 
-	if args.SeriesId == "" && args.Name == "" {
-		return false, "No SeriesID or Name was given. See -h for more information."
+	if args.SeriesId == "" && args.Name == "" && args.CollectionId == "" {
+		return false, "No SeriesID, CollectionID, or Name was given. See -h for more information."
 	}
 
 	return true, ""
@@ -196,11 +198,54 @@ func DownloadAudiobooks(auth *jf_requests.AuthResponse, baseurl string, item *jf
 
 	audiobook.Download(baseurl, auth.Token, keepFilenames)
 	return true
+}
 
+func DownloadCollection(auth *jf_requests.AuthResponse, baseurl string, collection *jf_requests.Item, keepFilename bool) bool {
+	items, err := jf_requests.GetItemsForParentId(auth, baseurl, collection)
+	if err != nil {
+		color.Red("Failed to get items: %s", err)
+		return false
+	}
+
+	color.Cyan("Downloading these Movies from the %s:", collection.Name)
+	for _, item := range items {
+		if item.Type == "Movie" {
+			color.Cyan("%s", item.Name)
+		}
+	}
+
+	if !GetConfirmation() {
+		return false
+	}
+
+	for _, item := range items {
+		if item.Type == "Movie" {
+			movie, err := jf_requests.GetMovieFromItem(auth, baseurl, &item)
+			if err != nil {
+				color.Red("Failed to obtain Movie for given id: %s", err)
+				return false
+			}
+
+			movie.Download(keepFilename)
+		} else {
+			color.Yellow("Skipping %s: Item type '%s' is not supported in collections yet.", item.Name, item.Type)
+		}
+	}
+
+	return true
 }
 
 func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
-	if args.SeriesId != "" {
+	if args.CollectionId != "" {
+		collection, err := jf_requests.GetItemForId(auth, args.BaseUrl, args.CollectionId)
+		if err != nil {
+			color.Red("Failed to find provided collection: %s", err)
+			return false
+		}
+
+		return DownloadCollection(auth, args.BaseUrl, collection, args.KeepFilenames)
+
+	} else if args.SeriesId != "" {
 		item, err := jf_requests.GetItemForId(auth, args.BaseUrl, args.SeriesId)
 		if err != nil {
 			color.Red("Failed to obtain items for given id: %s", err)
@@ -219,7 +264,7 @@ func Download(args *Arguments, auth *jf_requests.AuthResponse) bool {
 		}
 
 	} else if args.Name != "" {
-		items, err := jf_requests.GetItemsForText(auth, args.BaseUrl, args.Name)
+		items, err := jf_requests.SearchItemsForText(auth, args.BaseUrl, args.Name)
 		if err != nil {
 			color.Red("Failed to obtain Episode Information for given id: %s", err)
 			return false
