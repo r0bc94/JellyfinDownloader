@@ -3,6 +3,7 @@ package jf_requests
 import (
 	"errors"
 	"fmt"
+	"net/url"
 )
 
 type Item struct {
@@ -80,7 +81,8 @@ func GetAllItems(auth *AuthResponse, baseurl string) ([]Item, error) {
 
 // Returns the item whose name includes the given search term.
 func SearchItemsForText(auth *AuthResponse, baseurl string, searchtext string) ([]Item, error) {
-	requestUrl := baseurl + fmt.Sprintf("/Users/%s/Items/?recursive=true&limit=10&searchTerm=%s&includeItemTypes=Movie&includeItemTypes=Series&includeItemTypes=Folder", auth.UserId, searchtext)
+	escapedSearchterm := url.QueryEscape(searchtext)
+	requestUrl := baseurl + fmt.Sprintf("/Users/%s/Items/?recursive=true&limit=10&searchTerm=%s&includeItemTypes=Movie&includeItemTypes=Series&includeItemTypes=Folder", auth.UserId, escapedSearchterm)
 
 	res, err := MakeRequest(auth.Token, requestUrl, "GET", nil)
 	if err != nil {
