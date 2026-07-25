@@ -13,10 +13,9 @@ import (
 )
 
 func CreatePBar(length int64, description string) *progressbar.ProgressBar {
-	desc := ""
 	return progressbar.NewOptions64(
 		length,
-		progressbar.OptionSetDescription(desc),
+		progressbar.OptionSetDescription(description),
 		progressbar.OptionSetWriter(os.Stderr),
 		progressbar.OptionShowBytes(true),
 		progressbar.OptionSetWidth(10),
@@ -97,7 +96,8 @@ func DownloadFromUrl(downloadLink string, name string, outfile string, max int, 
 		}
 
 		// E. Start Downloading
-		bar := CreatePBar(resp.ContentLength, fmt.Sprintf("downloading %d/%d", current, max))
+		bardescription := fmt.Sprintf("[%d/%d] %s", current+1, max, name)
+		bar := CreatePBar(resp.ContentLength, bardescription)
 		_, copyErr := io.Copy(io.MultiWriter(f, bar), resp.Body)
 
 		f.Close()
