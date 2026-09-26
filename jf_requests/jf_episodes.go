@@ -167,7 +167,7 @@ func (season *Season) Download(baseUrl string, token string, keepFilenames bool)
 			}
 
 			downloadLink := GetDownloadLinkForId(baseUrl, token, episode.Id)
-			DownloadFromUrl(downloadLink, episode.Name, outfilename, len(season.Episodes), idx)
+			DownloadFromUrl(token, downloadLink, episode.Name, outfilename, len(season.Episodes), idx)
 		} else {
 			color.Yellow("Skipping non downloadable item: %s", episode.Name)
 		}

@@ -37,12 +37,11 @@ func ExecuteRequest(request *http.Request) (map[string]any, error) {
 			copy(headerForPrinting[key], value)
 		}
 
-		headerForPrinting["X-Emby-Authorization"][0] = "*****"
+		headerForPrinting["Authorization"][0] = "*****"
 		slog.Debug(fmt.Sprintf("Executing Request against: %s", request.URL), "method", request.Method, "header", headerForPrinting, "body", request.Body)
 	}
 
-	client := &http.Client{}
-	res, err := client.Do(request)
+	res, err := http.DefaultClient.Do(request)
 
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Request Failed: %s", err))
@@ -99,7 +98,7 @@ func Authorize(baseUrl string, username string, password string) (*AuthResponse,
 
 	// Fix Header by inserting the Authorization header with artificial Values
 	emby_auth_header := "MediaBrowser Client=\"Go\", Device=\"Test\", DeviceId=\"Test\", Version=\"1.0.0\""
-	req.Header.Set("X-Emby-Authorization", emby_auth_header)
+	req.Header.Set("Authorization", emby_auth_header)
 
 	response, err := ExecuteRequest(req)
 
@@ -117,15 +116,16 @@ func MakeRequest(token string, requestUrl string, method string, body any) (map[
 
 	// Create Request Body
 	reqbody_json, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
 
 	req, err := http.NewRequest(method, requestUrl, bytes.NewBuffer(reqbody_json))
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("Content-Type", "application/json")
-
-	// Fix Header by inserting the Authorization header with artificial Values
-	emby_auth_header := "MediaBrowser Client=\"Go\", Device=\"Test\", DeviceId=\"Test\", Version=\"1.0.0\""
-	emby_auth_header += fmt.Sprintf(", Token=\"%s\"", token)
-
-	req.Header.Set("X-Emby-Authorization", emby_auth_header)
+	setAuthorizationHeader(req, token)
 
 	result, err := ExecuteRequest(req)
 	if err != nil {
@@ -133,6 +133,27 @@ func MakeRequest(token string, requestUrl string, method string, body any) (map[
 	}
 
 	return result, nil
+}
+
+func MakeDownloadRequest(token string, requestUrl string, startByte int64) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, requestUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+	if startByte > 0 {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", startByte))
+	}
+	setAuthorizationHeader(req, token)
+
+	return http.DefaultClient.Do(req)
+}
+
+func setAuthorizationHeader(req *http.Request, token string) {
+	header := "MediaBrowser Client=\"Go\", Device=\"Test\", DeviceId=\"Test\", Version=\"1.0.0\""
+	if token != "" {
+		header += fmt.Sprintf(", Token=\"%s\"", token)
+	}
+	req.Header.Set("Authorization", header)
 }
 
 func GetFilenameForResponse(response map[string]any) (string, error) {
