@@ -97,8 +97,8 @@ func Authorize(baseUrl string, username string, password string) (*AuthResponse,
 	req.Header.Set("Content-Type", "application/json")
 
 	// Fix Header by inserting the Authorization header with artificial Values
-	emby_auth_header := "MediaBrowser Client=\"Go\", Device=\"Test\", DeviceId=\"Test\", Version=\"1.0.0\""
-	req.Header.Set("Authorization", emby_auth_header)
+	auth_header := "MediaBrowser Client=\"Jellyfin Downloader\", Device=\"My Device\", DeviceId=\"1234\", Version=\"1.0.0\""
+	req.Header.Set("Authorization", auth_header)
 
 	response, err := ExecuteRequest(req)
 
