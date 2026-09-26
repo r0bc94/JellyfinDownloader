@@ -3,7 +3,7 @@ package jf_requests
 import (
 	"fmt"
 	"io"
-	"net/http"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +31,7 @@ func CreatePBar(length int64, description string) *progressbar.ProgressBar {
 	)
 }
 
-func DownloadFromUrl(downloadLink string, name string, outfile string, max int, current int) error {
+func DownloadFromUrl(token string, downloadLink string, name string, outfile string, max int, current int) error {
 	// --- 1. Set up the 'downloads' directory (Run once) ---
 	const outputDir = "downloads"
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
@@ -51,12 +51,7 @@ func DownloadFromUrl(downloadLink string, name string, outfile string, max int, 
 		}
 
 		// B. Make the Request
-		req, _ := http.NewRequest("GET", downloadLink, nil)
-		if startByte > 0 {
-			req.Header.Set("Range", fmt.Sprintf("bytes=%d-", startByte))
-		}
-
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := MakeDownloadRequest(token, downloadLink, startByte)
 		if err != nil {
 			fmt.Printf("\n[Attempt %d] Connection failed: %s. Retrying in 15s...\n", attempt, err)
 			attempt++
@@ -72,6 +67,18 @@ func DownloadFromUrl(downloadLink string, name string, outfile string, max int, 
 		}
 
 		if resp.StatusCode != 200 && resp.StatusCode != 206 {
+			slog.Debug("Got a non 200 return code", "status code", resp.StatusCode, "ContentLenght", resp.ContentLength)
+			// Print the message from the server if there is any.
+			if resp.ContentLength > 0 {
+				var body []byte = make([]byte, resp.ContentLength)
+				_, err := resp.Body.Read(body)
+
+				if err != nil {
+					slog.Debug("Could not read the body")
+				} else {
+					slog.Debug("Server Message", body)
+				}
+			}
 			resp.Body.Close()
 			fmt.Printf("\n[Attempt %d] Server error (%d). Retrying in 15s...\n", attempt, resp.StatusCode)
 			attempt++

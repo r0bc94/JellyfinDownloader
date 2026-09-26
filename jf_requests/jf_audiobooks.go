@@ -100,7 +100,7 @@ func (audiobook *Audiobook) Download(baseUrl string, token string, keepFilenames
 			}
 
 			downloadLink := GetDownloadLinkForId(baseUrl, token, episode.Id)
-			DownloadFromUrl(downloadLink, episode.Name, outfilename, len(audiobook.Episodes), idx)
+			DownloadFromUrl(token, downloadLink, episode.Name, outfilename, len(audiobook.Episodes), idx)
 		} else {
 			color.Yellow("Skipping non downloadable item: %s", episode.Name)
 		}

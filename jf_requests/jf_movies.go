@@ -54,7 +54,7 @@ func (movie *Movie) PrintAndGetConfirmation() bool {
 	}
 }
 
-func (movie *Movie) Download(keepFilename bool) {
+func (movie *Movie) Download(token string, keepFilename bool) {
 	var outfilename string
 	if keepFilename {
 		outfilename = movie.Filename
@@ -64,5 +64,5 @@ func (movie *Movie) Download(keepFilename bool) {
 		outfilename = fmt.Sprintf("%s.%s", movie.Name, suffix)
 	}
 
-	DownloadFromUrl(movie.DownloadLink, movie.Name, outfilename, 1, 0)
+	DownloadFromUrl(token, movie.DownloadLink, movie.Name, outfilename, 1, 0)
 }

@@ -177,7 +177,7 @@ func DownloadMovie(auth *jf_requests.AuthResponse, baseurl string, item *jf_requ
 	}
 
 	if movie.PrintAndGetConfirmation() {
-		movie.Download(keepFilename)
+		movie.Download(auth.Token, keepFilename)
 	} else {
 		return false
 	}
@@ -226,7 +226,7 @@ func DownloadCollection(auth *jf_requests.AuthResponse, baseurl string, collecti
 				return false
 			}
 
-			movie.Download(keepFilename)
+			movie.Download(auth.Token, keepFilename)
 		} else {
 			color.Yellow("Skipping %s: Item type '%s' is not supported in collections yet.", item.Name, item.Type)
 		}
